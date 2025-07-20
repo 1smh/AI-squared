@@ -1,0 +1,50 @@
+[
+ {
+  "name": "1 word response",
+  "messages": [
+   {
+    "role": "system",
+    "content": "respond to this question with 1 word"
+   },
+   {
+    "role": "user",
+    "content": "what is the capital of France?"
+   }
+  ],
+  "temperature": 0,
+  "top_p": 1,
+  "top_k": 1
+ },
+ {
+  "name": "2 word response",
+  "messages": [
+   {
+    "role": "system",
+    "content": "respond to this question with 2 words"
+   },
+   {
+    "role": "user",
+    "content": "what is the capital of France?"
+   }
+  ],
+  "temperature": 0,
+  "top_p": 1,
+  "top_k": 1
+ },
+ {
+  "name": "1 sentence response",
+  "messages": [
+   {
+    "role": "system",
+    "content": "respond to this question with 1 sentence"
+   },
+   {
+    "role": "user",
+    "content": "what is the capital of France?"
+   }
+  ],
+  "temperature": 0,
+  "top_p": 1,
+  "top_k": 1
+ }
+]
