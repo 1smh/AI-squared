@@ -12,6 +12,15 @@ export interface APIResponse {
   confidence: number
 }
 
+export interface MasterConsensusResponse {
+  overallVerdict: "pass" | "warning" | "fail"
+  trustScore: number
+  summary: string
+  keyIssues: string[]
+  recommendations: string[]
+  consensusText: string
+}
+
 export const AGENT_PROMPTS: AgentPrompt[] = [
   {
     id: "developer",
@@ -91,7 +100,7 @@ Please respond in this exact JSON format:
         { role: "user", content: fullPrompt }
       ],
       temperature: 0.3,
-      max_tokens: 1000
+      max_tokens: 50000
     })
   })
 
@@ -116,12 +125,54 @@ Please respond in this exact JSON format:
   }
 }
 
+// Separate function specifically for master consensus API calls
+async function callMasterConsensusAPI(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string
+): Promise<MasterConsensusResponse> {
+  const response = await fetch('https://api.gmi-serving.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: "deepseek-ai/DeepSeek-R1-0528",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.2, // Lower temperature for more consistent consensus
+      max_tokens: 150000  // More tokens for comprehensive analysis
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error(`Master consensus API call failed: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  const content = data.choices[0]?.message?.content
+
+  try {
+    const parsed = JSON.parse(content)
+    // Validate the response structure
+    if (!parsed.overallVerdict || !parsed.trustScore || !parsed.summary) {
+      throw new Error('Invalid master consensus response structure')
+    }
+    return parsed
+  } catch (e) {
+    throw new Error(`Failed to parse master consensus response: ${e instanceof Error ? e.message : 'Unknown error'}`)
+  }
+}
+
 export async function runParallelAnalysis(
   originalPrompt: string,
   aiResponse: string,
   apiKey: string,
   onAgentComplete: (agentId: string, result: APIResponse, processingTime: number) => void
-): Promise<void> {
+): Promise<Array<{ agentId: string; result: APIResponse }>> {
   const startTime = Date.now()
   
   // Create promises for all agent API calls
@@ -154,8 +205,78 @@ export async function runParallelAnalysis(
     }
   })
 
-  // Wait for all agents to complete
-  await Promise.all(agentPromises)
+  // Wait for all agents to complete and return results
+  const results = await Promise.all(agentPromises)
+  return results.map(({ agentId, result }) => ({ agentId, result }))
+}
+
+// Improved fallback consensus generation
+function generateFallbackConsensus(
+  agentResults: Array<{ agentId: string; result: APIResponse }>
+): MasterConsensusResponse {
+  const verdictCounts = { pass: 0, warning: 0, fail: 0 }
+  const issues: string[] = []
+  const recommendations: string[] = []
+  let weightedConfidenceSum = 0
+  let totalValidResponses = 0
+
+  // Analyze agent results
+  agentResults.forEach(({ agentId, result }) => {
+    const agentName = AGENT_PROMPTS.find(a => a.id === agentId)?.name || agentId
+    
+    if (result.confidence > 0) {
+      verdictCounts[result.verdict]++
+      weightedConfidenceSum += result.confidence
+      totalValidResponses++
+    }
+
+    // Extract issues from commentary
+    if (result.verdict === 'fail' || result.verdict === 'warning') {
+      issues.push(`${agentName}: ${result.commentary.substring(0, 100)}...`)
+    }
+
+    // Generate recommendations based on verdict
+    if (result.verdict === 'fail') {
+      recommendations.push(`Address ${agentName.toLowerCase()} concerns`)
+    }
+  })
+
+  // Calculate trust score based on weighted average of confidence and verdict distribution
+  const avgConfidence = totalValidResponses > 0 ? weightedConfidenceSum / totalValidResponses : 0
+  const passRate = verdictCounts.pass / Math.max(totalValidResponses, 1)
+  const trustScore = Math.round((avgConfidence * 0.7) + (passRate * 30)) // Weight confidence more heavily
+
+  // Determine overall verdict with more nuanced logic
+  let overallVerdict: "pass" | "warning" | "fail"
+  const failRate = verdictCounts.fail / Math.max(totalValidResponses, 1)
+  const warningRate = verdictCounts.warning / Math.max(totalValidResponses, 1)
+
+  if (failRate > 0.3) { // If more than 30% fail
+    overallVerdict = "fail"
+  } else if (failRate > 0 || warningRate > 0.5) { // If any fail or more than 50% warning
+    overallVerdict = "warning"
+  } else {
+    overallVerdict = "pass"
+  }
+
+  // Add general recommendations
+  if (issues.length === 0) {
+    recommendations.push("Continue with current approach")
+  } else {
+    recommendations.push("Review and address identified issues")
+    if (trustScore < 70) {
+      recommendations.push("Consider additional review or revision")
+    }
+  }
+
+  return {
+    overallVerdict,
+    trustScore,
+    summary: `Analysis complete: ${verdictCounts.pass} agents passed, ${verdictCounts.warning} raised warnings, ${verdictCounts.fail} identified critical issues. Average confidence: ${Math.round(avgConfidence)}%.`,
+    keyIssues: issues.slice(0, 5), // Limit to top 5 issues
+    recommendations: recommendations.slice(0, 5), // Limit to top 5 recommendations
+    consensusText: `Fallback consensus generated due to API issues. Based on ${totalValidResponses} valid agent responses, the overall assessment is ${overallVerdict} with a trust score of ${trustScore}%. ${issues.length > 0 ? `Key concerns identified by: ${issues.map(i => i.split(':')[0]).join(', ')}.` : 'No significant issues identified.'}`
+  }
 }
 
 export async function generateMasterConsensus(
@@ -163,60 +284,69 @@ export async function generateMasterConsensus(
   aiResponse: string,
   agentResults: Array<{ agentId: string; result: APIResponse }>,
   apiKey: string
-): Promise<any> {
+): Promise<MasterConsensusResponse> {
+  // Prepare agent summary for master consensus
   const agentSummary = agentResults.map(({ agentId, result }) => {
     const agentName = AGENT_PROMPTS.find(a => a.id === agentId)?.name || agentId
-    return `${agentName}: ${result.verdict.toUpperCase()} (${result.confidence}% confidence) - ${result.commentary}`
+    return `${agentName}: ${result.verdict.toUpperCase()} (${result.confidence}% confidence)\n   Analysis: ${result.commentary}\n   ${result.revisedText ? `Suggested revision: ${result.revisedText.substring(0, 200)}...` : ''}`
   }).join('\n\n')
 
-  const masterPrompt = `You are the Master Consensus Agent. Your job is to synthesize all expert agent reviews into a final assessment.
+  const masterSystemPrompt = `You are the Master Consensus Agent responsible for synthesizing multiple expert analyses into a comprehensive final assessment. 
 
-ORIGINAL PROMPT: "${originalPrompt}"
-AI RESPONSE: "${aiResponse}"
+Your role is to:
+1. Weigh each expert's verdict and confidence level
+2. Identify patterns and consensus across expert opinions  
+3. Generate an overall trust score (0-100) based on agreement and confidence levels
+4. Provide actionable recommendations
+5. Create a balanced final assessment
 
-AGENT REVIEWS:
+Consider that:
+- Higher confidence ratings should carry more weight
+- Multiple experts agreeing increases reliability
+- Failed analyses (confidence 0) should be noted but not heavily weighted
+- Domain-specific experts may have more authority in their areas`
+
+  const masterUserPrompt = `Synthesize these expert analyses into a comprehensive final assessment:
+
+ORIGINAL USER PROMPT: "${originalPrompt}"
+
+AI RESPONSE BEING EVALUATED: "${aiResponse}"
+
+EXPERT AGENT ANALYSES:
 ${agentSummary}
 
-Based on all agent feedback, provide a comprehensive final assessment in this JSON format:
+Provide your master consensus in this exact JSON format:
 {
   "overallVerdict": "pass" | "warning" | "fail",
   "trustScore": 85,
-  "summary": "Brief summary of the analysis",
-  "keyIssues": ["Issue 1", "Issue 2"],
-  "recommendations": ["Recommendation 1", "Recommendation 2"],
-  "consensusText": "Detailed final assessment and reasoning"
+  "summary": "Brief 2-3 sentence summary of the overall assessment",
+  "keyIssues": ["Specific issue 1", "Specific issue 2", "etc"],
+  "recommendations": ["Actionable recommendation 1", "Actionable recommendation 2", "etc"], 
+  "consensusText": "Detailed 3-4 sentence explanation of your reasoning, consensus findings, and final judgment"
 }`
 
   try {
-    const result = await callGMIAPI(
-      "You are a master AI analyst who synthesizes multiple expert opinions into comprehensive assessments.",
-      masterPrompt,
-      originalPrompt,
-      aiResponse,
+    const result = await callMasterConsensusAPI(
+      masterSystemPrompt,
+      masterUserPrompt,
       apiKey
     )
-    return result
-  } catch (error) {
-    console.error('Master consensus failed:', error)
-    // Fallback consensus based on agent results
-    const passCount = agentResults.filter(r => r.result.verdict === "pass").length
-    const warningCount = agentResults.filter(r => r.result.verdict === "warning").length
-    const failCount = agentResults.filter(r => r.result.verdict === "fail").length
     
-    const trustScore = Math.round((passCount / agentResults.length) * 100)
-    let overallVerdict: "pass" | "warning" | "fail"
-    
-    if (failCount > 0) overallVerdict = "fail"
-    else if (warningCount > 2) overallVerdict = "warning"
-    else overallVerdict = "pass"
-
+    // Validate and sanitize the response
     return {
-      overallVerdict,
-      trustScore,
-      summary: `Analysis complete. ${passCount} agents passed, ${warningCount} raised warnings, ${failCount} identified critical issues.`,
-      keyIssues: ["API connection issues prevented full analysis"],
-      recommendations: ["Verify API key and connection", "Retry analysis"],
-      consensusText: "Master consensus generation failed, but individual agent results are available above."
+      overallVerdict: result.overallVerdict,
+      trustScore: Math.max(0, Math.min(100, result.trustScore)), // Clamp between 0-100
+      summary: result.summary || "Master consensus analysis completed",
+      keyIssues: Array.isArray(result.keyIssues) ? result.keyIssues.slice(0, 10) : [],
+      recommendations: Array.isArray(result.recommendations) ? result.recommendations.slice(0, 10) : [],
+      consensusText: result.consensusText || "Master consensus generated successfully"
     }
+    
+  } catch (error) {
+    console.error('Master consensus API failed:', error)
+    console.log('Generating fallback consensus based on agent results...')
+    
+    // Use improved fallback logic
+    return generateFallbackConsensus(agentResults)
   }
 }

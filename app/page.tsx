@@ -70,6 +70,7 @@ export default function TruthCheckAI() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [masterConsensus, setMasterConsensus] = useState<MasterConsensus | null>(null)
+  const [isGeneratingConsensus, setIsGeneratingConsensus] = useState(false)
   const [agents, setAgents] = useState<AgentResult[]>(() => {
     const agentIcons = {
       developer: <Code className="w-4 h-4" />,
@@ -116,6 +117,7 @@ export default function TruthCheckAI() {
     setIsAnalyzing(true)
     setAnalysisProgress(0)
     setMasterConsensus(null)
+    setIsGeneratingConsensus(false)
     
     // Reset agents
     setAgents(prev => prev.map(agent => ({
@@ -141,36 +143,64 @@ export default function TruthCheckAI() {
         aiResponse,
         apiKey,
         (agentId: string, result: APIResponse, processingTime: number) => {
+          // Ensure result is valid before processing
+          if (!result) {
+            console.warn(`Agent ${agentId} returned null result`)
+            result = {
+              verdict: "fail",
+              commentary: "Analysis failed - no result returned",
+              confidence: 0
+            }
+          }
+
           // Update individual agent as it completes
           setAgents(prev => prev.map(agent => 
             agent.id === agentId ? {
               ...agent,
               status: "completed",
-              verdict: result.verdict,
-              commentary: result.commentary,
+              verdict: result.verdict || "fail",
+              commentary: result.commentary || "No commentary provided",
               revisedText: result.revisedText,
-              confidence: result.confidence,
+              confidence: result.confidence || 0,
               processingTime
             } : agent
           ))
           
           agentResults.push({ agentId, result })
           
-          // Update progress
+          // Update progress (leave room for master consensus generation)
           const completedCount = agentResults.length
-          setAnalysisProgress((completedCount / (AGENT_PROMPTS.length + 1)) * 100)
+          setAnalysisProgress((completedCount / AGENT_PROMPTS.length) * 80) // 80% for agents, 20% for consensus
         }
       )
       
-      // Generate master consensus
-      const consensus = await generateMasterConsensus(
-        userPrompt,
-        aiResponse,
-        agentResults,
-        apiKey
-      )
+      // Generate master consensus only if we have valid results
+      const validResults = agentResults.filter(r => r.result && r.result.verdict)
       
-      setMasterConsensus(consensus)
+      if (validResults.length > 0) {
+        setIsGeneratingConsensus(true)
+        setAnalysisProgress(90) // Show we're working on consensus
+        
+        const consensus = await generateMasterConsensus(
+          userPrompt,
+          aiResponse,
+          validResults, // Only pass valid results
+          apiKey
+        )
+        
+        setMasterConsensus(consensus)
+      } else {
+        // Fallback if no valid results
+        setMasterConsensus({
+          overallVerdict: "fail",
+          trustScore: 0,
+          summary: "Analysis failed - no valid agent results received",
+          keyIssues: ["All agent analyses failed"],
+          recommendations: ["Check API key and connection", "Retry analysis"],
+          consensusText: "Unable to generate consensus due to analysis failures"
+        })
+      }
+      
       setAnalysisProgress(100)
       
     } catch (error) {
@@ -186,20 +216,18 @@ export default function TruthCheckAI() {
       })))
     } finally {
       setIsAnalyzing(false)
+      setIsGeneratingConsensus(false)
     }
   }
-
-
-
 
   const getVerdictIcon = (verdict: string | null) => {
     switch (verdict) {
       case "pass":
-        return <CheckCircle className="w-4 h-4 text-gray-700" />
+        return <CheckCircle className="w-4 h-4 text-green-600" />
       case "warning":
-        return <AlertTriangle className="w-4 h-4 text-gray-600" />
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />
       case "fail":
-        return <XCircle className="w-4 h-4 text-gray-800" />
+        return <XCircle className="w-4 h-4 text-red-600" />
       default:
         return null
     }
@@ -208,11 +236,11 @@ export default function TruthCheckAI() {
   const getVerdictColor = (verdict: string | null) => {
     switch (verdict) {
       case "pass":
-        return "bg-gray-100 text-gray-800 border-gray-300"
+        return "bg-green-100 text-green-800 border-green-300"
       case "warning":
-        return "bg-gray-200 text-gray-800 border-gray-400"
+        return "bg-yellow-100 text-yellow-800 border-yellow-300"
       case "fail":
-        return "bg-gray-300 text-gray-900 border-gray-500"
+        return "bg-red-100 text-red-800 border-red-300"
       default:
         return "bg-gray-50 text-gray-600 border-gray-200"
     }
@@ -220,17 +248,19 @@ export default function TruthCheckAI() {
 
   const completedAgents = agents.filter(agent => agent.status === "completed")
   
-  // Chart data
+  // Chart data with null checks
   const verdictData = [
-    { name: "Pass", value: completedAgents.filter(a => a.verdict === "pass").length, fill: "#6b7280" },
-    { name: "Warning", value: completedAgents.filter(a => a.verdict === "warning").length, fill: "#9ca3af" },
-    { name: "Fail", value: completedAgents.filter(a => a.verdict === "fail").length, fill: "#374151" }
-  ]
+    { name: "Pass", value: completedAgents.filter(a => a.verdict === "pass").length, fill: "#10b981" },
+    { name: "Warning", value: completedAgents.filter(a => a.verdict === "warning").length, fill: "#f59e0b" },
+    { name: "Fail", value: completedAgents.filter(a => a.verdict === "fail").length, fill: "#ef4444" }
+  ].filter(item => item.value > 0) // Only show non-zero values
 
-  const confidenceData = completedAgents.map(agent => ({
-    name: agent.name.split(' ')[0],
-    confidence: agent.confidence
-  }))
+  const confidenceData = completedAgents
+    .filter(agent => agent.confidence != null) // Filter out null/undefined confidence
+    .map(agent => ({
+      name: agent.name.split(' ')[0],
+      confidence: agent.confidence
+    }))
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -301,7 +331,7 @@ export default function TruthCheckAI() {
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing...
+                    {isGeneratingConsensus ? 'Generating Consensus...' : 'Analyzing...'}
                   </>
                 ) : (
                   <>
@@ -316,7 +346,9 @@ export default function TruthCheckAI() {
             {isAnalyzing && (
               <div className="space-y-3 pt-4">
                 <div className="flex justify-between text-sm text-gray-600">
-                  <span>Analysis Progress</span>
+                  <span>
+                    {isGeneratingConsensus ? 'Generating Master Consensus...' : 'Running Agent Analysis...'}
+                  </span>
                   <span>{Math.round(analysisProgress)}%</span>
                 </div>
                 <Progress value={analysisProgress} className="w-full h-2" />
@@ -330,7 +362,9 @@ export default function TruthCheckAI() {
           <Tabs defaultValue="agents" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 bg-gray-100">
               <TabsTrigger value="agents" className="data-[state=active]:bg-white">Agent Reviews</TabsTrigger>
-              <TabsTrigger value="consensus" className="data-[state=active]:bg-white">Master Consensus</TabsTrigger>
+              <TabsTrigger value="consensus" className="data-[state=active]:bg-white">
+                Master Consensus {masterConsensus && <span className="ml-1 text-xs">✓</span>}
+              </TabsTrigger>
               <TabsTrigger value="analytics" className="data-[state=active]:bg-white">Analytics</TabsTrigger>
             </TabsList>
 
@@ -400,7 +434,7 @@ export default function TruthCheckAI() {
 
             {/* Master Consensus Tab */}
             <TabsContent value="consensus" className="space-y-6">
-              {masterConsensus && (
+              {masterConsensus ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card className="border-gray-200 shadow-sm">
                     <CardHeader className="border-b border-gray-100">
@@ -440,82 +474,151 @@ export default function TruthCheckAI() {
                       <CardTitle className="text-lg font-normal">Key Issues & Recommendations</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 space-y-4">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-800 mb-2">Key Issues</h4>
-                        <ul className="space-y-1">
-                          {masterConsensus.keyIssues.map((issue, index) => (
-                            <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
-                              <span className="text-gray-400 mt-1">•</span>
-                              {issue}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <Separator />
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-800 mb-2">Recommendations</h4>
-                        <ul className="space-y-1">
-                          {masterConsensus.recommendations.map((rec, index) => (
-                            <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
-                              <span className="text-gray-400 mt-1">•</span>
-                              {rec}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      {masterConsensus.keyIssues && masterConsensus.keyIssues.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-800 mb-2">Key Issues</h4>
+                          <ul className="space-y-1">
+                            {masterConsensus.keyIssues.map((issue, index) => (
+                              <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
+                                <span className="text-red-400 mt-1">•</span>
+                                {issue}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {masterConsensus.keyIssues && masterConsensus.keyIssues.length > 0 && 
+                       masterConsensus.recommendations && masterConsensus.recommendations.length > 0 && (
+                        <Separator />
+                      )}
+                      {masterConsensus.recommendations && masterConsensus.recommendations.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-800 mb-2">Recommendations</h4>
+                          <ul className="space-y-1">
+                            {masterConsensus.recommendations.map((rec, index) => (
+                              <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
+                                <span className="text-green-400 mt-1">•</span>
+                                {rec}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
+              ) : isGeneratingConsensus ? (
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-12 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                      Generating Master Consensus
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Synthesizing all agent reviews into a comprehensive final assessment...
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : completedAgents.length > 0 ? (
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-12 text-center">
+                    <Brain className="w-8 h-8 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                      Master Consensus Pending
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Complete the agent analysis to generate the master consensus.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-gray-200 shadow-sm">
+                  <CardContent className="p-12 text-center">
+                    <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                      No Analysis Yet
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Run an analysis to see the master consensus here.
+                    </p>
+                  </CardContent>
+                </Card>
               )}
             </TabsContent>
 
             {/* Analytics Tab */}
             <TabsContent value="analytics" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-gray-200 shadow-sm">
-                  <CardHeader className="border-b border-gray-100">
-                    <CardTitle className="flex items-center gap-2 text-lg font-normal">
-                      <PieChart className="w-5 h-5" />
-                      Verdict Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                          <RechartsPieChart data={verdictData}>
-                            {verdictData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </RechartsPieChart>
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </RechartsPieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+              {completedAgents.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="border-gray-200 shadow-sm">
+                    <CardHeader className="border-b border-gray-100">
+                      <CardTitle className="flex items-center gap-2 text-lg font-normal">
+                        <PieChart className="w-5 h-5" />
+                        Verdict Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {verdictData.length > 0 ? (
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <RechartsPieChart data={verdictData}>
+                                {verdictData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                              </RechartsPieChart>
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="h-64 flex items-center justify-center text-gray-500">
+                          No data available
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
+                  <Card className="border-gray-200 shadow-sm">
+                    <CardHeader className="border-b border-gray-100">
+                      <CardTitle className="flex items-center gap-2 text-lg font-normal">
+                        <BarChart3 className="w-5 h-5" />
+                        Agent Confidence Levels
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {confidenceData.length > 0 ? (
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={confidenceData}>
+                              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                              <YAxis tick={{ fontSize: 12 }} />
+                              <Bar dataKey="confidence" fill="#6b7280" />
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="h-64 flex items-center justify-center text-gray-500">
+                          No data available
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
                 <Card className="border-gray-200 shadow-sm">
-                  <CardHeader className="border-b border-gray-100">
-                    <CardTitle className="flex items-center gap-2 text-lg font-normal">
-                      <BarChart3 className="w-5 h-5" />
-                      Agent Confidence Levels
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={confidenceData}>
-                          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Bar dataKey="confidence" fill="#6b7280" />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                  <CardContent className="p-12 text-center">
+                    <BarChart3 className="w-8 h-8 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                      No Analytics Yet
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Run an analysis to see detailed analytics here.
+                    </p>
                   </CardContent>
                 </Card>
-              </div>
+              )}
             </TabsContent>
           </Tabs>
         )}
