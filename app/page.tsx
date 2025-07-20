@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ApiKeyDialog } from "@/components/ui/api-key-dialog"
 import { 
   Brain, 
   Code, 
@@ -27,7 +28,8 @@ import {
   PieChart,
   MessageSquare,
   User,
-  Bot
+  Bot,
+  Settings
 } from "lucide-react"
 import {
   ChartContainer,
@@ -35,6 +37,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts"
+import { runParallelAnalysis, generateMasterConsensus, AGENT_PROMPTS } from "@/lib/api"
+import type { APIResponse } from "@/lib/api"
 
 interface AgentResult {
   id: string
@@ -46,6 +50,7 @@ interface AgentResult {
   revisedText?: string
   processingTime?: number
   confidence: number
+  error?: string
 }
 
 interface MasterConsensus {
@@ -60,77 +65,53 @@ interface MasterConsensus {
 export default function TruthCheckAI() {
   const [userPrompt, setUserPrompt] = useState("")
   const [aiResponse, setAiResponse] = useState("")
+  const [apiKey, setApiKey] = useState("")
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [masterConsensus, setMasterConsensus] = useState<MasterConsensus | null>(null)
-  const [agents, setAgents] = useState<AgentResult[]>([
-    {
-      id: "developer",
-      name: "Software Developer",
-      icon: <Code className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    },
-    {
-      id: "child",
-      name: "Child",
-      icon: <Baby className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    },
-    {
-      id: "philosopher",
-      name: "Philosopher",
-      icon: <Lightbulb className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    },
-    {
-      id: "journalist",
-      name: "Investigative Journalist",
-      icon: <FileText className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    },
-    {
-      id: "expert",
-      name: "Domain Expert",
-      icon: <GraduationCap className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    },
-    {
-      id: "compliance",
-      name: "Compliance Officer",
-      icon: <Shield className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    },
-    {
-      id: "editor",
-      name: "Clarity Editor",
-      icon: <Edit3 className="w-4 h-4" />,
-      status: "pending",
-      verdict: null,
-      commentary: "",
-      confidence: 0
+  const [agents, setAgents] = useState<AgentResult[]>(() => {
+    const agentIcons = {
+      developer: <Code className="w-4 h-4" />,
+      child: <Baby className="w-4 h-4" />,
+      philosopher: <Lightbulb className="w-4 h-4" />,
+      journalist: <FileText className="w-4 h-4" />,
+      expert: <GraduationCap className="w-4 h-4" />,
+      compliance: <Shield className="w-4 h-4" />,
+      editor: <Edit3 className="w-4 h-4" />
     }
-  ])
+    
+    return AGENT_PROMPTS.map(agent => ({
+      id: agent.id,
+      name: agent.name,
+      icon: agentIcons[agent.id as keyof typeof agentIcons],
+      status: "pending" as const,
+      verdict: null,
+      commentary: "",
+      confidence: 0
+    }))
+  })
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('gmi-api-key')
+    if (savedApiKey) {
+      setApiKey(savedApiKey)
+    }
+  }, [])
+
+  const handleApiKeySet = (newApiKey: string) => {
+    setApiKey(newApiKey)
+    localStorage.setItem('gmi-api-key', newApiKey)
+  }
 
   const handleAnalyze = async () => {
     if (!userPrompt.trim() || !aiResponse.trim()) return
+    
+    if (!apiKey.trim()) {
+      setShowApiKeyDialog(true)
+      return
+    }
     
     setIsAnalyzing(true)
     setAnalysisProgress(0)
@@ -144,118 +125,72 @@ export default function TruthCheckAI() {
       commentary: "",
       revisedText: undefined,
       processingTime: undefined,
-      confidence: 0
+      confidence: 0,
+      error: undefined
     })))
 
-    // Simulate analysis process
-    for (let i = 0; i < agents.length; i++) {
-      // Update current agent to running
-      setAgents(prev => prev.map((agent, index) => 
-        index === i ? { ...agent, status: "running" } : agent
-      ))
+    try {
+      // Set all agents to running
+      setAgents(prev => prev.map(agent => ({ ...agent, status: "running" })))
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200))
+      const agentResults: Array<{ agentId: string; result: APIResponse }> = []
       
-      // Complete current agent with mock results
-      const mockResults = getMockAgentResult(agents[i].id)
-      setAgents(prev => prev.map((agent, index) => 
-        index === i ? { 
-          ...agent, 
-          status: "completed",
-          ...mockResults,
-          processingTime: Math.round(800 + Math.random() * 1200)
-        } : agent
-      ))
+      // Run parallel analysis
+      await runParallelAnalysis(
+        userPrompt,
+        aiResponse,
+        apiKey,
+        (agentId: string, result: APIResponse, processingTime: number) => {
+          // Update individual agent as it completes
+          setAgents(prev => prev.map(agent => 
+            agent.id === agentId ? {
+              ...agent,
+              status: "completed",
+              verdict: result.verdict,
+              commentary: result.commentary,
+              revisedText: result.revisedText,
+              confidence: result.confidence,
+              processingTime
+            } : agent
+          ))
+          
+          agentResults.push({ agentId, result })
+          
+          // Update progress
+          const completedCount = agentResults.length
+          setAnalysisProgress((completedCount / (AGENT_PROMPTS.length + 1)) * 100)
+        }
+      )
       
-      setAnalysisProgress(((i + 1) / (agents.length + 1)) * 100)
-    }
-    
-    // Generate master consensus
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setMasterConsensus(generateMasterConsensus())
-    setAnalysisProgress(100)
-    setIsAnalyzing(false)
-  }
-
-  const getMockAgentResult = (agentId: string) => {
-    const mockResults = {
-      developer: {
-        verdict: "warning" as const,
-        commentary: "Code syntax appears correct, but lacks error handling. Consider adding try-catch blocks for production use.",
-        confidence: 75
-      },
-      child: {
-        verdict: "fail" as const,
-        commentary: "This explanation is too complex! I don't understand words like 'asynchronous' and 'middleware'. Can you explain it like I'm 5?",
-        revisedText: "This is like a helper that waits for things to finish before moving to the next step, like waiting for your turn in line.",
-        confidence: 90
-      },
-      philosopher: {
-        verdict: "pass" as const,
-        commentary: "The logical structure is sound and the reasoning follows established principles. No ethical concerns identified.",
-        confidence: 85
-      },
-      journalist: {
-        verdict: "warning" as const,
-        commentary: "Claims need verification. No sources provided for statistical assertions. Recommend fact-checking with primary sources.",
-        confidence: 70
-      },
-      expert: {
-        verdict: "pass" as const,
-        commentary: "Technical accuracy confirmed. Implementation follows industry best practices and current standards.",
-        confidence: 95
-      },
-      compliance: {
-        verdict: "pass" as const,
-        commentary: "No legal, safety, or policy violations detected. Content complies with standard guidelines.",
-        confidence: 88
-      },
-      editor: {
-        verdict: "warning" as const,
-        commentary: "Text could be more accessible. Reduced jargon and simplified sentence structure recommended.",
-        revisedText: "Here's a clearer version: This tool helps check if AI responses are accurate and easy to understand.",
-        confidence: 80
-      }
-    }
-    
-    return mockResults[agentId as keyof typeof mockResults] || {
-      verdict: "pass" as const,
-      commentary: "Analysis completed successfully.",
-      confidence: 85
+      // Generate master consensus
+      const consensus = await generateMasterConsensus(
+        userPrompt,
+        aiResponse,
+        agentResults,
+        apiKey
+      )
+      
+      setMasterConsensus(consensus)
+      setAnalysisProgress(100)
+      
+    } catch (error) {
+      console.error('Analysis failed:', error)
+      // Handle error state
+      setAgents(prev => prev.map(agent => ({
+        ...agent,
+        status: "completed",
+        verdict: "fail",
+        commentary: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        confidence: 0,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })))
+    } finally {
+      setIsAnalyzing(false)
     }
   }
 
-  const generateMasterConsensus = (): MasterConsensus => {
-    const completedAgents = agents.filter(agent => agent.status === "completed")
-    const passCount = completedAgents.filter(a => a.verdict === "pass").length
-    const warningCount = completedAgents.filter(a => a.verdict === "warning").length
-    const failCount = completedAgents.filter(a => a.verdict === "fail").length
-    
-    const trustScore = Math.round((passCount / completedAgents.length) * 100)
-    
-    let overallVerdict: "pass" | "warning" | "fail"
-    if (failCount > 0) overallVerdict = "fail"
-    else if (warningCount > 2) overallVerdict = "warning"
-    else overallVerdict = "pass"
 
-    return {
-      overallVerdict,
-      trustScore,
-      summary: `Analysis complete. ${passCount} agents passed, ${warningCount} raised warnings, ${failCount} identified critical issues.`,
-      keyIssues: [
-        "Complexity concerns raised by accessibility review",
-        "Missing source verification for factual claims",
-        "Code lacks proper error handling"
-      ],
-      recommendations: [
-        "Simplify technical language for broader audience",
-        "Add credible sources for statistical claims",
-        "Implement comprehensive error handling in code examples"
-      ],
-      consensusText: "The response demonstrates technical competence but requires improvements in accessibility and source verification. Consider revising for clarity while maintaining accuracy."
-    }
-  }
+
 
   const getVerdictIcon = (verdict: string | null) => {
     switch (verdict) {
@@ -348,9 +283,18 @@ export default function TruthCheckAI() {
             </div>
             
             <div className="flex items-center justify-center pt-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowApiKeyDialog(true)}
+                  className="border-gray-300 hover:border-gray-400"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  {apiKey ? 'Update' : 'Set'} API Key
+                </Button>
               <Button 
                 onClick={handleAnalyze}
-                disabled={!userPrompt.trim() || !aiResponse.trim() || isAnalyzing}
+                disabled={!userPrompt.trim() || !aiResponse.trim() || isAnalyzing || !apiKey.trim()}
                 className="bg-black hover:bg-gray-800 text-white px-8 py-2 font-normal"
                 size="lg"
               >
@@ -366,6 +310,7 @@ export default function TruthCheckAI() {
                   </>
                 )}
               </Button>
+              </div>
             </div>
             
             {isAnalyzing && (
@@ -417,6 +362,13 @@ export default function TruthCheckAI() {
                       
                       {agent.commentary && (
                         <div className="space-y-3">
+                          {agent.error && (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded">
+                              <p className="text-xs text-red-700">
+                                Error: {agent.error}
+                              </p>
+                            </div>
+                          )}
                           <p className="text-xs text-gray-600 leading-relaxed">
                             {agent.commentary}
                           </p>
@@ -567,6 +519,14 @@ export default function TruthCheckAI() {
             </TabsContent>
           </Tabs>
         )}
+
+        {/* API Key Dialog */}
+        <ApiKeyDialog
+          open={showApiKeyDialog}
+          onOpenChange={setShowApiKeyDialog}
+          onApiKeySet={handleApiKeySet}
+          currentApiKey={apiKey}
+        />
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-400 pt-8">
