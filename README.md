@@ -1,10 +1,10 @@
-# 🧠 TruthCheck AI
+# 🧠 AI² (AI squared)
 
 An agentic AI verifier that detects hallucinations, misinformation, and logical errors across AI-generated content.
 
 ## 🚀 What It Does
 
-TruthCheck AI takes an output from any large language model (ChatGPT, Claude, etc.) and runs it through a panel of expert agents — each with a unique perspective — to flag hallucinations, inconsistencies, safety issues, or unreadable complexity.
+AI² takes an output from any large language model (ChatGPT, Claude, etc.) and runs it through a panel of expert agents — each with a unique perspective — to flag hallucinations, inconsistencies, safety issues, or unreadable complexity.
 
 ## 🤖 Agent Personas
 
@@ -33,8 +33,7 @@ Each agent outputs a verdict (✅ / ⚠️ / ❌), commentary, and optionally re
 
 - **Frontend**: Next.js, React, Tailwind CSS
 - **Backend**: FastAPI or Node.js (async agent execution)
-- **LLMs Used**: GMI-Cloud Deepseek
-- **Hosting**: Local deployment
+- **LLMs Used**: GMI-Cloud Deepseek and K2
 - **APIs**: Supports user-supplied keys for modularity
 
 ## 🎯 Use Cases
