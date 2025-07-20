@@ -18,7 +18,7 @@ export interface MasterConsensusResponse {
   summary: string
   keyIssues: string[]
   recommendations: string[]
-  consensusText: string
+  consensusText?: string
   betterAnswer?: string
 }
 
@@ -64,6 +64,12 @@ export const AGENT_PROMPTS: AgentPrompt[] = [
     name: "Clarity Editor",
     systemPrompt: "You are a professional editor focused on clarity, accessibility, and readability. Your job is to identify unclear writing, suggest improvements, and make content more accessible to diverse audiences. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Edit this AI response for clarity and accessibility. Evaluate:\n- Writing clarity and readability\n- Sentence structure and flow\n- Jargon and technical language\n- Accessibility for diverse audiences\n- Overall communication effectiveness\n\nProvide verdict (pass/warning/fail), suggest improvements, and rate confidence (0-100). If needed, provide a revised version.\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+  },
+  {
+    id: "relevance",
+    name: "Relevance Analyst",
+    systemPrompt: "You are a Relevance Analyst. Your job is to evaluate if the AI's response directly and completely addresses the user's original prompt. You must ignore factual accuracy and writing style, and focus only on whether the user's instructions were followed. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Analyze this AI response for relevance and instruction-following. Evaluate:\n- Did it answer the actual question asked?\n- Did it address all parts of the prompt?\n- Did it misunderstand the user's intent?\n- Did it include unrequested, irrelevant information?\n\nUse the following strict criteria for your verdict:\n- Fail: The response completely ignores or misunderstands the core request in the user's prompt.\n- Warning: The response answers only part of the prompt or includes significant off-topic information.\n- Pass: The response is a direct, complete, and on-topic answer to the user's query.\n\nProvide verdict (pass/warning/fail), detailed commentary, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   }
 ]
 
@@ -333,7 +339,7 @@ function generateFallbackConsensus(
       let cleanCommentary = result.commentary
         .replace(/```json\s*/g, '')
         .replace(/```\s*/g, '')
-        .replace(/\{[\s\S]*\}/g, '')
+        .replace(/\{[\s\S]*\}/g, '')  
         .replace(/^\s*["']?verdict["']?\s*:\s*["']?(\w+)["']?/gim, '')
         .replace(/^\s*["']?commentary["']?\s*:\s*["']?/gim, '')
         .replace(/^\s*["']?confidence["']?\s*:\s*\d+/gim, '')
@@ -404,7 +410,6 @@ function generateFallbackConsensus(
     summary: `Analysis complete: ${verdictCounts.pass} agents passed, ${verdictCounts.warning} raised warnings, ${verdictCounts.fail} identified critical issues. Average confidence: ${Math.round(avgConfidence)}%.`,
     keyIssues: issues.slice(0, 5), // Limit to top 5 issues
     recommendations: recommendations.slice(0, 5), // Limit to top 5 recommendations
-    consensusText: `Fallback consensus generated due to API issues. Based on ${totalValidResponses} valid agent responses, the overall assessment is ${overallVerdict} with a trust score of ${trustScore}%. ${issues.length > 0 ? `Key concerns identified by: ${issues.map(i => i.split(':')[0]).join(', ')}.` : 'No significant issues identified.'}`,
     betterAnswer
   }
 }
@@ -482,7 +487,7 @@ IMPORTANT: Respond with ONLY valid JSON in this exact format:
       summary: result.summary || "Master consensus analysis completed",
       keyIssues: Array.isArray(result.keyIssues) ? result.keyIssues.slice(0, 10) : [],
       recommendations: Array.isArray(result.recommendations) ? result.recommendations.slice(0, 10) : [],
-      consensusText: result.consensusText || "Master consensus generated successfully",
+      consensusText: result.consensusText || undefined,
       betterAnswer: result.betterAnswer || undefined
     }
     

@@ -83,7 +83,8 @@ export default function TruthCheckAI() {
       journalist: <FileText className="w-4 h-4" />,
       expert: <GraduationCap className="w-4 h-4" />,
       compliance: <Shield className="w-4 h-4" />,
-      editor: <Edit3 className="w-4 h-4" />
+      editor: <Edit3 className="w-4 h-4" />,
+      relevance: <PieChart className="w-4 h-4" />
     }
     
     return AGENT_PROMPTS.map(agent => ({
