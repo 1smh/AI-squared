@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiKeyDialog } from "@/components/ui/api-key-dialog"
+import { useToast } from "@/components/ui/use-toast"
 import { 
   Brain, 
   Code, 
@@ -57,6 +58,7 @@ interface MasterConsensus {
   overallVerdict: "pass" | "warning" | "fail"
   trustScore: number
   summary: string
+  betterAnswer?: string
   keyIssues: string[]
   recommendations: string[]
   consensusText?: string
@@ -71,6 +73,7 @@ export default function TruthCheckAI() {
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [masterConsensus, setMasterConsensus] = useState<MasterConsensus | null>(null)
   const [isGeneratingConsensus, setIsGeneratingConsensus] = useState(false)
+  const { toast } = useToast()
   const [agents, setAgents] = useState<AgentResult[]>(() => {
     const agentIcons = {
       developer: <Code className="w-4 h-4" />,
@@ -197,7 +200,8 @@ export default function TruthCheckAI() {
           summary: "Analysis failed - no valid agent results received",
           keyIssues: ["All agent analyses failed"],
           recommendations: ["Check API key and connection", "Retry analysis"],
-          consensusText: "Unable to generate consensus due to analysis failures"
+          consensusText: "Unable to generate consensus due to analysis failures",
+          betterAnswer: "No better answer could be generated due to analysis failures."
         })
       }
       
@@ -462,6 +466,30 @@ export default function TruthCheckAI() {
                           <div className="p-4 bg-gray-50 rounded">
                             <p className="text-sm text-gray-800 leading-relaxed">
                               {masterConsensus.consensusText}
+                            </p>
+                          </div>
+                        )}
+                        {masterConsensus.betterAnswer && (
+                          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded border-l-4 border-blue-400 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4" />
+                                Better Answer
+                              </p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigator.clipboard.writeText(masterConsensus.betterAnswer!).then(() => toast({
+                                  title: "Copied to clipboard!",
+                                  description: "Better answer copied to clipboard.",
+                                }))}
+                                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                Copy
+                              </Button>
+                            </div>
+                            <p className="text-sm text-blue-700 leading-relaxed">
+                              {masterConsensus.betterAnswer}
                             </p>
                           </div>
                         )}

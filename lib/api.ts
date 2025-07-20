@@ -19,6 +19,7 @@ export interface MasterConsensusResponse {
   keyIssues: string[]
   recommendations: string[]
   consensusText: string
+  betterAnswer?: string
 }
 
 export const AGENT_PROMPTS: AgentPrompt[] = [
@@ -269,13 +270,31 @@ function generateFallbackConsensus(
     }
   }
 
+  // Try to generate a basic better answer from available revisedText
+  let betterAnswer: string | undefined = undefined
+  if (overallVerdict === "fail" || overallVerdict === "warning") {
+    const availableRevisions = agentResults
+      .filter(({ result }) => result.revisedText && result.verdict !== "pass")
+      .map(({ agentId, result }) => {
+        const agentName = AGENT_PROMPTS.find(a => a.id === agentId)?.name || agentId
+        return `${agentName} suggests: ${result.revisedText}`
+      })
+    
+    if (availableRevisions.length > 0) {
+      betterAnswer = `Based on expert feedback, here's an improved response:\n\n${availableRevisions.join('\n\n')}`
+    } else {
+      betterAnswer = "A better answer could not be generated in fallback mode due to API issues. Please retry the analysis to get a comprehensive improved response."
+    }
+  }
+
   return {
     overallVerdict,
     trustScore,
     summary: `Analysis complete: ${verdictCounts.pass} agents passed, ${verdictCounts.warning} raised warnings, ${verdictCounts.fail} identified critical issues. Average confidence: ${Math.round(avgConfidence)}%.`,
     keyIssues: issues.slice(0, 5), // Limit to top 5 issues
     recommendations: recommendations.slice(0, 5), // Limit to top 5 recommendations
-    consensusText: `Fallback consensus generated due to API issues. Based on ${totalValidResponses} valid agent responses, the overall assessment is ${overallVerdict} with a trust score of ${trustScore}%. ${issues.length > 0 ? `Key concerns identified by: ${issues.map(i => i.split(':')[0]).join(', ')}.` : 'No significant issues identified.'}`
+    consensusText: `Fallback consensus generated due to API issues. Based on ${totalValidResponses} valid agent responses, the overall assessment is ${overallVerdict} with a trust score of ${trustScore}%. ${issues.length > 0 ? `Key concerns identified by: ${issues.map(i => i.split(':')[0]).join(', ')}.` : 'No significant issues identified.'}`,
+    betterAnswer
   }
 }
 
@@ -299,12 +318,22 @@ Your role is to:
 3. Generate an overall trust score (0-100) based on agreement and confidence levels
 4. Provide actionable recommendations
 5. Create a balanced final assessment
+6. Generate a better answer when the original AI response has significant issues
+
+When creating a better answer:
+- Synthesize the expert feedback to identify the main issues with the original response
+- Address factual inaccuracies, logical flaws, clarity issues, and other concerns raised by the experts
+- Maintain the original intent while improving accuracy, clarity, and completeness
+- Incorporate suggestions from individual agents' revisedText when available
+- Ensure the better answer directly responds to the original user prompt
+- Make the response more accurate, clear, and helpful than the original
 
 Consider that:
 - Higher confidence ratings should carry more weight
 - Multiple experts agreeing increases reliability
 - Failed analyses (confidence 0) should be noted but not heavily weighted
-- Domain-specific experts may have more authority in their areas`
+- Domain-specific experts may have more authority in their areas
+- When experts identify issues, provide an improved version that addresses those concerns`
 
   const masterUserPrompt = `Synthesize these expert analyses into a comprehensive final assessment:
 
@@ -322,7 +351,8 @@ Provide your master consensus in this exact JSON format:
   "summary": "Brief 2-3 sentence summary of the overall assessment",
   "keyIssues": ["Specific issue 1", "Specific issue 2", "etc"],
   "recommendations": ["Actionable recommendation 1", "Actionable recommendation 2", "etc"], 
-  "consensusText": "Detailed 3-4 sentence explanation of your reasoning, consensus findings, and final judgment"
+  "consensusText": "Detailed 3-4 sentence explanation of your reasoning, consensus findings, and final judgment",
+  "betterAnswer": "A comprehensive, improved response that addresses the identified issues. This should be a complete answer to the original prompt that incorporates the expert feedback to make it more accurate, clear, and helpful. Only include if verdict is warning or fail."
 }`
 
   try {
@@ -339,7 +369,8 @@ Provide your master consensus in this exact JSON format:
       summary: result.summary || "Master consensus analysis completed",
       keyIssues: Array.isArray(result.keyIssues) ? result.keyIssues.slice(0, 10) : [],
       recommendations: Array.isArray(result.recommendations) ? result.recommendations.slice(0, 10) : [],
-      consensusText: result.consensusText || "Master consensus generated successfully"
+      consensusText: result.consensusText || "Master consensus generated successfully",
+      betterAnswer: result.betterAnswer || undefined
     }
     
   } catch (error) {
