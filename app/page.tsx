@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/chart"
 import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts"
 import { runParallelAnalysis, generateMasterConsensus, AGENT_PROMPTS } from "@/lib/api"
+import { cleanJsonArtifacts } from "@/lib/utils"
 import type { APIResponse } from "@/lib/api"
 
 interface AgentResult {
@@ -408,7 +409,7 @@ export default function TruthCheckAI() {
                             </div>
                           )}
                           <p className="text-xs text-gray-600 leading-relaxed">
-                            {agent.commentary}
+                            {cleanJsonArtifacts(agent.commentary)}
                           </p>
                           {agent.revisedText && (
                             <div className="p-3 bg-gray-50 rounded border-l-2 border-gray-400">
@@ -460,12 +461,12 @@ export default function TruthCheckAI() {
                       <Separator />
                       <div className="space-y-3">
                         <p className="text-sm text-gray-700 leading-relaxed">
-                          {masterConsensus.summary}
+                          {cleanJsonArtifacts(masterConsensus.summary)}
                         </p>
                         {masterConsensus.consensusText && (
                           <div className="p-4 bg-gray-50 rounded">
                             <p className="text-sm text-gray-800 leading-relaxed">
-                              {masterConsensus.consensusText}
+                              {cleanJsonArtifacts(masterConsensus.consensusText)}
                             </p>
                           </div>
                         )}
@@ -509,7 +510,7 @@ export default function TruthCheckAI() {
                             {masterConsensus.keyIssues.map((issue, index) => (
                               <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
                                 <span className="text-red-400 mt-1">•</span>
-                                {issue}
+                                {cleanJsonArtifacts(issue)}
                               </li>
                             ))}
                           </ul>
@@ -526,7 +527,7 @@ export default function TruthCheckAI() {
                             {masterConsensus.recommendations.map((rec, index) => (
                               <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
                                 <span className="text-green-400 mt-1">•</span>
-                                {rec}
+                                {cleanJsonArtifacts(rec)}
                               </li>
                             ))}
                           </ul>

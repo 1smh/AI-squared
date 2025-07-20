@@ -26,44 +26,44 @@ export const AGENT_PROMPTS: AgentPrompt[] = [
   {
     id: "developer",
     name: "Software Developer",
-    systemPrompt: "You are an experienced software developer. Your job is to review AI-generated content for code correctness, logic errors, best practices, and technical accuracy. Focus on syntax, implementation details, security concerns, and maintainability.",
-    analysisPrompt: "Analyze this AI response for code correctness and technical implementation. Check for:\n- Syntax errors\n- Logic flaws\n- Security vulnerabilities\n- Best practice violations\n- Missing error handling\n\nProvide a verdict (pass/warning/fail), detailed commentary, and confidence score (0-100)."
+    systemPrompt: "You are an experienced software developer. Your job is to review AI-generated content for code correctness, logic errors, best practices, and technical accuracy. Focus on syntax, implementation details, security concerns, and maintainability. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Analyze this AI response for code correctness and technical implementation. Check for:\n- Syntax errors\n- Logic flaws\n- Security vulnerabilities\n- Best practice violations\n- Missing error handling\n\nProvide a verdict (pass/warning/fail), detailed commentary, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
   {
     id: "child",
     name: "Child",
-    systemPrompt: "You are a curious 8-year-old child. Your job is to evaluate if explanations are simple enough for a child to understand. Look for complex words, confusing concepts, and unclear explanations.",
-    analysisPrompt: "Read this AI response and tell me if a child could understand it. Check for:\n- Big words that are hard to understand\n- Confusing explanations\n- Too many complex ideas at once\n- Missing simple examples\n\nIf it's too hard, suggest a simpler version. Give a verdict (pass/warning/fail), explain why, and rate your confidence (0-100)."
+    systemPrompt: "You are a curious 8-year-old child. Your job is to evaluate if explanations are simple enough for a child to understand. Look for complex words, confusing concepts, and unclear explanations. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Read this AI response and tell me if a child could understand it. Check for:\n- Big words that are hard to understand\n- Confusing explanations\n- Too many complex ideas at once\n- Missing simple examples\n\nIf it's too hard, suggest a simpler version. Give a verdict (pass/warning/fail), explain why, and rate your confidence (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
   {
     id: "philosopher",
     name: "Philosopher",
-    systemPrompt: "You are a philosopher specializing in logic, ethics, and reasoning. Your role is to examine AI responses for logical consistency, ethical implications, reasoning flaws, and philosophical soundness.",
-    analysisPrompt: "Examine this AI response for logical and ethical soundness. Evaluate:\n- Logical consistency and reasoning\n- Ethical implications and concerns\n- Philosophical assumptions\n- Argument structure and validity\n- Potential biases or fallacies\n\nProvide verdict (pass/warning/fail), detailed analysis, and confidence score (0-100)."
+    systemPrompt: "You are a philosopher specializing in logic, ethics, and reasoning. Your role is to examine AI responses for logical consistency, ethical implications, reasoning flaws, and philosophical soundness. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Examine this AI response for logical and ethical soundness. Evaluate:\n- Logical consistency and reasoning\n- Ethical implications and concerns\n- Philosophical assumptions\n- Argument structure and validity\n- Potential biases or fallacies\n\nProvide verdict (pass/warning/fail), detailed analysis, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
   {
     id: "journalist",
     name: "Investigative Journalist",
-    systemPrompt: "You are an investigative journalist focused on fact-checking and source verification. Your job is to identify claims that need verification, check for misinformation, and assess the credibility of statements.",
-    analysisPrompt: "Fact-check this AI response like an investigative journalist. Look for:\n- Unverified claims and statistics\n- Missing or questionable sources\n- Potential misinformation\n- Statements that need fact-checking\n- Credibility concerns\n\nProvide verdict (pass/warning/fail), identify specific issues, and rate confidence (0-100)."
+    systemPrompt: "You are an investigative journalist focused on fact-checking and source verification. Your job is to identify claims that need verification, check for misinformation, and assess the credibility of statements. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Fact-check this AI response like an investigative journalist. Look for:\n- Unverified claims and statistics\n- Missing or questionable sources\n- Potential misinformation\n- Statements that need fact-checking\n- Credibility concerns\n\nProvide verdict (pass/warning/fail), identify specific issues, and rate confidence (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
   {
     id: "expert",
     name: "Domain Expert",
-    systemPrompt: "You are a domain expert with deep knowledge across multiple fields. Your role is to verify technical accuracy, identify subject matter errors, and ensure information aligns with current best practices and standards.",
-    analysisPrompt: "Review this AI response for technical accuracy and domain expertise. Assess:\n- Factual correctness in the subject area\n- Alignment with current standards/practices\n- Technical terminology usage\n- Depth and accuracy of explanations\n- Missing important context\n\nProvide verdict (pass/warning/fail), expert commentary, and confidence score (0-100)."
+    systemPrompt: "You are a domain expert with deep knowledge across multiple fields. Your role is to verify technical accuracy, identify subject matter errors, and ensure information aligns with current best practices and standards. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Review this AI response for technical accuracy and domain expertise. Assess:\n- Factual correctness in the subject area\n- Alignment with current standards/practices\n- Technical terminology usage\n- Depth and accuracy of explanations\n- Missing important context\n\nProvide verdict (pass/warning/fail), expert commentary, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
   {
     id: "compliance",
     name: "Compliance Officer",
-    systemPrompt: "You are a compliance officer responsible for identifying legal, safety, and policy violations. Your job is to scan content for potential risks, regulatory issues, and safety concerns.",
-    analysisPrompt: "Scan this AI response for compliance and safety issues. Check for:\n- Legal or regulatory concerns\n- Safety risks or dangerous advice\n- Privacy violations\n- Ethical policy violations\n- Inappropriate content\n\nProvide verdict (pass/warning/fail), identify specific risks, and rate confidence (0-100)."
+    systemPrompt: "You are a compliance officer responsible for identifying legal, safety, and policy violations. Your job is to scan content for potential risks, regulatory issues, and safety concerns. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Scan this AI response for compliance and safety issues. Check for:\n- Legal or regulatory concerns\n- Safety risks or dangerous advice\n- Privacy violations\n- Ethical policy violations\n- Inappropriate content\n\nProvide verdict (pass/warning/fail), identify specific risks, and rate confidence (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
   {
     id: "editor",
     name: "Clarity Editor",
-    systemPrompt: "You are a professional editor focused on clarity, accessibility, and readability. Your job is to identify unclear writing, suggest improvements, and make content more accessible to diverse audiences.",
-    analysisPrompt: "Edit this AI response for clarity and accessibility. Evaluate:\n- Writing clarity and readability\n- Sentence structure and flow\n- Jargon and technical language\n- Accessibility for diverse audiences\n- Overall communication effectiveness\n\nProvide verdict (pass/warning/fail), suggest improvements, and rate confidence (0-100). If needed, provide a revised version."
+    systemPrompt: "You are a professional editor focused on clarity, accessibility, and readability. Your job is to identify unclear writing, suggest improvements, and make content more accessible to diverse audiences. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
+    analysisPrompt: "Edit this AI response for clarity and accessibility. Evaluate:\n- Writing clarity and readability\n- Sentence structure and flow\n- Jargon and technical language\n- Accessibility for diverse audiences\n- Overall communication effectiveness\n\nProvide verdict (pass/warning/fail), suggest improvements, and rate confidence (0-100). If needed, provide a revised version.\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   }
 ]
 
@@ -117,11 +117,57 @@ Please respond in this exact JSON format:
     const parsed = JSON.parse(content)
     return parsed
   } catch (e) {
-    // Fallback if JSON parsing fails
+    // Enhanced fallback: try to extract JSON from the content
+    console.warn('JSON parsing failed, attempting to extract JSON from response')
+    
+    // Try to find JSON in the content (common when AI includes markdown formatting)
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      try {
+        const extractedJson = JSON.parse(jsonMatch[0])
+        return extractedJson
+      } catch (extractError) {
+        console.warn('Failed to extract JSON from response')
+      }
+    }
+    
+    // If we can't parse JSON, try to extract meaningful content
+    let commentary = content || "Analysis completed but response format was unexpected"
+    
+    // Remove common JSON artifacts and markdown formatting
+    commentary = commentary
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*/g, '')
+      .replace(/\{[\s\S]*\}/g, '') // Remove any remaining JSON blocks
+      .replace(/^\s*["']?verdict["']?\s*:\s*["']?(\w+)["']?/gim, '')
+      .replace(/^\s*["']?commentary["']?\s*:\s*["']?/gim, '')
+      .replace(/^\s*["']?confidence["']?\s*:\s*\d+/gim, '')
+      .trim()
+    
+    // If commentary is empty after cleaning, provide a default
+    if (!commentary || commentary.length < 10) {
+      commentary = "Analysis completed but response format was unexpected"
+    }
+    
+    // Try to determine verdict from content
+    let verdict: "pass" | "warning" | "fail" = "warning"
+    if (content.toLowerCase().includes('"verdict": "pass"') || content.toLowerCase().includes('"pass"')) {
+      verdict = "pass"
+    } else if (content.toLowerCase().includes('"verdict": "fail"') || content.toLowerCase().includes('"fail"')) {
+      verdict = "fail"
+    }
+    
+    // Try to extract confidence score
+    let confidence = 50
+    const confidenceMatch = content.match(/"confidence"\s*:\s*(\d+)/)
+    if (confidenceMatch) {
+      confidence = parseInt(confidenceMatch[1])
+    }
+    
     return {
-      verdict: "warning",
-      commentary: content || "Analysis completed but response format was unexpected",
-      confidence: 50
+      verdict,
+      commentary,
+      confidence
     }
   }
 }
@@ -164,6 +210,57 @@ async function callMasterConsensusAPI(
     }
     return parsed
   } catch (e) {
+    // Enhanced fallback for master consensus
+    console.warn('Master consensus JSON parsing failed, attempting to extract JSON from response')
+    
+    // Try to find JSON in the content
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      try {
+        const extractedJson = JSON.parse(jsonMatch[0])
+        // Validate the extracted JSON
+        if (extractedJson.overallVerdict && extractedJson.trustScore && extractedJson.summary) {
+          return extractedJson
+        }
+      } catch (extractError) {
+        console.warn('Failed to extract valid JSON from master consensus response')
+      }
+    }
+    
+    // If we can't parse JSON, create a fallback response
+    let summary = "Master consensus analysis completed"
+    let consensusText = "Master consensus generated successfully"
+    let keyIssues: string[] = []
+    let recommendations: string[] = []
+    let betterAnswer: string | undefined = undefined
+    
+    // Try to extract meaningful content
+    let cleanedContent = content
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*/g, '')
+      .replace(/\{[\s\S]*\}/g, '')
+      .trim()
+    
+    if (cleanedContent && cleanedContent.length > 20) {
+      summary = cleanedContent.substring(0, 200) + (cleanedContent.length > 200 ? '...' : '')
+      consensusText = cleanedContent
+    }
+    
+    // Try to determine verdict from content
+    let overallVerdict: "pass" | "warning" | "fail" = "warning"
+    if (content.toLowerCase().includes('"overallVerdict": "pass"') || content.toLowerCase().includes('"pass"')) {
+      overallVerdict = "pass"
+    } else if (content.toLowerCase().includes('"overallVerdict": "fail"') || content.toLowerCase().includes('"fail"')) {
+      overallVerdict = "fail"
+    }
+    
+    // Try to extract trust score
+    let trustScore = 50
+    const trustScoreMatch = content.match(/"trustScore"\s*:\s*(\d+)/)
+    if (trustScoreMatch) {
+      trustScore = parseInt(trustScoreMatch[1])
+    }
+    
     throw new Error(`Failed to parse master consensus response: ${e instanceof Error ? e.message : 'Unknown error'}`)
   }
 }
@@ -233,7 +330,21 @@ function generateFallbackConsensus(
 
     // Extract issues from commentary
     if (result.verdict === 'fail' || result.verdict === 'warning') {
-      issues.push(`${agentName}: ${result.commentary.substring(0, 100)}...`)
+      let cleanCommentary = result.commentary
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .replace(/\{[\s\S]*\}/g, '')
+        .replace(/^\s*["']?verdict["']?\s*:\s*["']?(\w+)["']?/gim, '')
+        .replace(/^\s*["']?commentary["']?\s*:\s*["']?/gim, '')
+        .replace(/^\s*["']?confidence["']?\s*:\s*\d+/gim, '')
+        .trim()
+      
+      // If commentary is too short after cleaning, use original but truncated
+      if (cleanCommentary.length < 20) {
+        cleanCommentary = result.commentary.substring(0, 100)
+      }
+      
+      issues.push(`${agentName}: ${cleanCommentary.substring(0, 100)}...`)
     }
 
     // Generate recommendations based on verdict
@@ -333,7 +444,9 @@ Consider that:
 - Multiple experts agreeing increases reliability
 - Failed analyses (confidence 0) should be noted but not heavily weighted
 - Domain-specific experts may have more authority in their areas
-- When experts identify issues, provide an improved version that addresses those concerns`
+- When experts identify issues, provide an improved version that addresses those concerns
+
+IMPORTANT: Respond ONLY with valid JSON in the exact format specified.`
 
   const masterUserPrompt = `Synthesize these expert analyses into a comprehensive final assessment:
 
@@ -344,7 +457,7 @@ AI RESPONSE BEING EVALUATED: "${aiResponse}"
 EXPERT AGENT ANALYSES:
 ${agentSummary}
 
-Provide your master consensus in this exact JSON format:
+IMPORTANT: Respond with ONLY valid JSON in this exact format:
 {
   "overallVerdict": "pass" | "warning" | "fail",
   "trustScore": 85,
