@@ -4,7 +4,7 @@ An agentic AI verifier that detects hallucinations, misinformation, and logical 
 
 ## 🚀 What It Does
 
-AI² takes an output from any large language model (ChatGPT, Claude, etc.) and runs it through a panel of expert agents — each with a unique perspective — to flag hallucinations, inconsistencies, safety issues, or unreadable complexity.
+AI² takes an output from any large language model (ChatGPT, Claude, etc.) and runs it through a panel of expert agents — each with a unique perspective — to flag hallucinations, inconsistencies, safety issues, or unreadable complexity. Then those flagged perspectives are synthesized into a coherent response using a more advanced agent.
 
 ## 🤖 Agent Personas
 
