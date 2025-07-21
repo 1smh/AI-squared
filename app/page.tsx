@@ -670,6 +670,135 @@ export default function TruthCheckAI() {
             <TabsContent value="analytics" className="space-y-6">
               {completedAgents.length > 0 ? (
                 <>
+                  {/* Master Consensus Analytics - Single Component (moved to top) */}
+                  {masterConsensus && masterConsensus.aggregatedMetrics && (
+                    <Card className="border-gray-200 shadow-sm">
+                      <CardHeader className="border-b border-gray-100">
+                        <CardTitle className="flex items-center gap-2 text-xl font-normal">
+                          <Brain className="w-6 h-6 text-black" />
+                          Master Consensus Analytics
+                          <Badge className={`ml-auto ${getVerdictColor(masterConsensus.overallVerdict)} text-sm px-3 py-1`}>
+                            {masterConsensus.overallVerdict.toUpperCase()}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6 space-y-6">
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-black">{masterConsensus.trustScore}%</div>
+                            <div className="text-sm text-gray-600">Trust Score</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-black">
+                              {masterConsensus.overallVerdict.toUpperCase()}
+                            </div>
+                            <div className="text-sm text-gray-600">Overall Verdict</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-black">
+                              {completedAgents.filter(a => a.verdict === "pass").length}/{completedAgents.length}
+                            </div>
+                            <div className="text-sm text-gray-600">Agents Passed</div>
+                          </div>
+                        </div>
+
+                        {/* Charts Grid */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {/* Bar Chart */}
+                          <div className="space-y-3">
+                            <h4 className="text-lg font-medium text-black">Quality Metrics</h4>
+                            <div className="h-64">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                  data={[
+                                    { metric: "Conciseness", score: masterConsensus.aggregatedMetrics.conciseness },
+                                    { metric: "Correctness", score: masterConsensus.aggregatedMetrics.correctness },
+                                    { metric: "Low Bias", score: 100 - masterConsensus.aggregatedMetrics.bias },
+                                    { metric: "Low Toxicity", score: 100 - masterConsensus.aggregatedMetrics.toxicity },
+                                    { metric: "Objectivity", score: masterConsensus.aggregatedMetrics.objectivity }
+                                  ]}
+                                  margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
+                                >
+                                  <XAxis
+                                    dataKey="metric"
+                                    tick={{ fontSize: 12 }}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={60}
+                                  />
+                                  <YAxis tick={{ fontSize: 12 }} domain={[0, 100]} />
+                                  <Bar dataKey="score" fill="transparent" stroke="#000000" strokeWidth={2} />
+                                  <ChartTooltip
+                                    content={({ active, payload, label }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-white p-3 border border-gray-200 rounded shadow">
+                                            <p className="text-sm font-medium">{label}</p>
+                                            <p className="text-sm text-black">
+                                              Score: {payload[0].value}
+                                            </p>
+                                          </div>
+                                        )
+                                      }
+                                      return null
+                                    }}
+                                  />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+
+                          {/* Radar Chart */}
+                          <div className="space-y-3">
+                            <h4 className="text-lg font-medium text-black">Performance Profile</h4>
+                            <div className="h-64">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart
+                                  data={[
+                                    { metric: "Conciseness", value: masterConsensus.aggregatedMetrics.conciseness },
+                                    { metric: "Correctness", value: masterConsensus.aggregatedMetrics.correctness },
+                                    { metric: "Low Bias", value: 100 - masterConsensus.aggregatedMetrics.bias },
+                                    { metric: "Low Toxicity", value: 100 - masterConsensus.aggregatedMetrics.toxicity },
+                                    { metric: "Objectivity", value: masterConsensus.aggregatedMetrics.objectivity }
+                                  ]}
+                                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+                                >
+                                  <PolarGrid />
+                                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
+                                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
+                                  <Radar
+                                    name="Master Score"
+                                    dataKey="value"
+                                    stroke="#000000"
+                                    fill="#000000"
+                                    fillOpacity={0.3}
+                                    strokeWidth={3}
+                                  />
+                                  <ChartTooltip
+                                    content={({ active, payload, label }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-white p-3 border border-gray-200 rounded shadow">
+                                            <p className="text-sm font-medium">{label}</p>
+                                            <p className="text-sm text-black">
+                                              Master Score: {payload[0].value}
+                                            </p>
+                                          </div>
+                                        )
+                                      }
+                                      return null
+                                    }}
+                                  />
+                                </RadarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Individual Agent Charts */}
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {completedAgents.map((agent) => {
@@ -703,9 +832,9 @@ export default function TruthCheckAI() {
                           <CardContent className="p-4 space-y-4">
                             {/* Bar Chart */}
                             <div className="space-y-2">
-                              <h4 className="text-sm font-medium text-gray-700">Quality Metrics</h4>
+                              <h4 className="text-sm font-medium text-black">Quality Metrics</h4>
                               {agentMetrics.length > 0 ? (
-                                <div className="h-32">
+                                <div className="h-48">
                                   <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={agentMetrics} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                                       <XAxis
@@ -716,14 +845,14 @@ export default function TruthCheckAI() {
                                         height={40}
                                       />
                                       <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
-                                      <Bar dataKey="score" fill="#6b7280" />
+                                      <Bar dataKey="score" fill="transparent" stroke="#000000" strokeWidth={2} />
                                       <ChartTooltip
                                         content={({ active, payload, label }) => {
                                           if (active && payload && payload.length) {
                                             return (
                                               <div className="bg-white p-2 border border-gray-200 rounded shadow">
                                                 <p className="text-xs font-medium">{label}</p>
-                                                <p className="text-xs text-blue-600">
+                                                <p className="text-xs text-black">
                                                   Score: {payload[0].value}
                                                 </p>
                                               </div>
@@ -736,7 +865,7 @@ export default function TruthCheckAI() {
                                   </ResponsiveContainer>
                                 </div>
                               ) : (
-                                <div className="h-32 flex items-center justify-center text-gray-400 text-xs">
+                                <div className="h-48 flex items-center justify-center text-gray-400 text-xs">
                                   No metrics data
                                 </div>
                               )}
@@ -744,9 +873,9 @@ export default function TruthCheckAI() {
 
                             {/* Radar Chart */}
                             <div className="space-y-2">
-                              <h4 className="text-sm font-medium text-gray-700">Performance Profile</h4>
+                              <h4 className="text-sm font-medium text-black">Performance Profile</h4>
                               {agentRadarData.length > 0 ? (
-                                <div className="h-32">
+                                <div className="h-48">
                                   <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart data={agentRadarData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                                       <PolarGrid />
@@ -755,8 +884,8 @@ export default function TruthCheckAI() {
                                       <Radar
                                         name="Score"
                                         dataKey="value"
-                                        stroke="#6b7280"
-                                        fill="#6b7280"
+                                        stroke="#000000"
+                                        fill="#000000"
                                         fillOpacity={0.3}
                                         strokeWidth={2}
                                       />
@@ -765,24 +894,24 @@ export default function TruthCheckAI() {
                                           if (active && payload && payload.length) {
                                             return (
                                               <div className="bg-white p-2 border border-gray-200 rounded shadow">
-                                                <p className="text-xs font-medium">{label}</p>
-                                                <p className="text-xs text-blue-600">
-                                                  Score: {payload[0].value}
-                                                </p>
-                                              </div>
-                                            )
-                                          }
-                                          return null
-                                        }}
-                                      />
-                                    </RadarChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              ) : (
-                                <div className="h-32 flex items-center justify-center text-gray-400 text-xs">
-                                  No performance data
-                                </div>
-                              )}
+                                              <p className="text-xs font-medium">{label}</p>
+                                              <p className="text-xs text-black">
+                                                Score: {payload[0].value}
+                                              </p>
+                                            </div>
+                                          )
+                                        }
+                                        return null
+                                      }}
+                                    />
+                                  </RadarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            ) : (
+                              <div className="h-48 flex items-center justify-center text-gray-400 text-xs">
+                                No performance data
+                              </div>
+                            )}
                             </div>
 
                             {/* Quick Stats */}
@@ -795,131 +924,6 @@ export default function TruthCheckAI() {
                       )
                     })}
                   </div>
-
-                  {/* Master Consensus Charts - Full Width */}
-                  {masterConsensus && masterConsensus.aggregatedMetrics && (
-                    <>
-                      {/* Master Bar Chart - Full Width */}
-                      <Card className="border-2 border-blue-200 shadow-md bg-blue-50/30">
-                        <CardHeader className="border-b border-blue-200">
-                          <CardTitle className="flex items-center gap-2 text-xl font-normal">
-                            <Brain className="w-6 h-6 text-blue-600" />
-                            Master Consensus Quality Metrics
-                            <Badge className={`ml-auto ${getVerdictColor(masterConsensus.overallVerdict)} text-sm px-3 py-1`}>
-                              {masterConsensus.overallVerdict.toUpperCase()}
-                            </Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                          <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart
-                                data={[
-                                  { metric: "Conciseness", score: masterConsensus.aggregatedMetrics.conciseness },
-                                  { metric: "Correctness", score: masterConsensus.aggregatedMetrics.correctness },
-                                  { metric: "Low Bias", score: 100 - masterConsensus.aggregatedMetrics.bias },
-                                  { metric: "Low Toxicity", score: 100 - masterConsensus.aggregatedMetrics.toxicity },
-                                  { metric: "Objectivity", score: masterConsensus.aggregatedMetrics.objectivity }
-                                ]}
-                                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                              >
-                                <XAxis
-                                  dataKey="metric"
-                                  tick={{ fontSize: 14 }}
-                                  angle={-45}
-                                  textAnchor="end"
-                                  height={80}
-                                />
-                                <YAxis tick={{ fontSize: 12 }} domain={[0, 100]} />
-                                <Bar dataKey="score" fill="#2563eb" />
-                                <ChartTooltip
-                                  content={({ active, payload, label }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-white p-3 border border-gray-200 rounded shadow">
-                                          <p className="text-sm font-medium">{label}</p>
-                                          <p className="text-sm text-blue-600">
-                                            Score: {payload[0].value}
-                                          </p>
-                                        </div>
-                                      )
-                                    }
-                                    return null
-                                  }}
-                                />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Master Radar Chart - Full Width */}
-                      <Card className="border-2 border-blue-200 shadow-md bg-blue-50/30">
-                        <CardHeader className="border-b border-blue-200">
-                          <CardTitle className="flex items-center gap-2 text-xl font-normal">
-                            <Brain className="w-6 h-6 text-blue-600" />
-                            Master Consensus Performance Profile
-                            <Badge className={`ml-auto ${getVerdictColor(masterConsensus.overallVerdict)} text-sm px-3 py-1`}>
-                              {masterConsensus.overallVerdict.toUpperCase()}
-                            </Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                          <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RadarChart
-                                data={[
-                                  { metric: "Conciseness", value: masterConsensus.aggregatedMetrics.conciseness },
-                                  { metric: "Correctness", value: masterConsensus.aggregatedMetrics.correctness },
-                                  { metric: "Low Bias", value: 100 - masterConsensus.aggregatedMetrics.bias },
-                                  { metric: "Low Toxicity", value: 100 - masterConsensus.aggregatedMetrics.toxicity },
-                                  { metric: "Objectivity", value: masterConsensus.aggregatedMetrics.objectivity }
-                                ]}
-                                margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
-                              >
-                                <PolarGrid />
-                                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 14 }} />
-                                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
-                                <Radar
-                                  name="Master Score"
-                                  dataKey="value"
-                                  stroke="#2563eb"
-                                  fill="#2563eb"
-                                  fillOpacity={0.4}
-                                  strokeWidth={3}
-                                />
-                                <ChartTooltip
-                                  content={({ active, payload, label }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-white p-3 border border-gray-200 rounded shadow">
-                                          <p className="text-sm font-medium">{label}</p>
-                                          <p className="text-sm text-blue-600">
-                                            Master Score: {payload[0].value}
-                                          </p>
-                                        </div>
-                                      )
-                                    }
-                                    return null
-                                  }}
-                                />
-                              </RadarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Master Consensus Stats */}
-                      <Card className="border-2 border-blue-200 shadow-md bg-blue-50/30">
-                        <CardContent className="p-6">
-                          <div className="flex justify-between text-sm text-gray-600">
-                            <span>Trust Score: {masterConsensus.trustScore}%</span>
-                            <span>Overall Verdict: {masterConsensus.overallVerdict.toUpperCase()}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
                 </>
               ) : (
                 <Card className="border-gray-200 shadow-sm">
