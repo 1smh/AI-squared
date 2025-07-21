@@ -4,7 +4,7 @@ import json
 
 
 question = "what is the capital of France?"
-testkey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg2MjM0YjY1LTIxNDktNGNmMC04M2I4LTA3OTYzYWQ5NGRlYiIsInR5cGUiOiJpZV9tb2RlbCJ9.Hr8VnJ7UYwtWk13RQ3XC1UuRRST3uAqomV1SRgFCBnw"
+#testkey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg2MjM0YjY1LTIxNDktNGNmMC04M2I4LTA3OTYzYWQ5NGRlYiIsInR5cGUiOiJpZV9tb2RlbCJ9.Hr8VnJ7UYwtWk13RQ3XC1UuRRST3uAqomV1SRgFCBnw"
 url = "https://api.gmi-serving.com/v1/chat/completions"
 model = "Qwen/Qwen3-235B-A22B-FP8"
 aiAnswers = []
