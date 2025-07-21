@@ -3,9 +3,9 @@ import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
-  title: 'TruthCheck AI - Agentic AI Verifier',
+  title: "AI² - AI without the negatives, because it's squared",
   description: 'An agentic AI verifier that detects hallucinations, misinformation, and logical errors across AI-generated content.',
-  generator: 'TruthCheck AI',
+  generator: 'AI²',
 }
 
 export default function RootLayout({
@@ -15,6 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/logo.png" type="image/png" />
+      </head>
       <body>
         {children}
         <Toaster />

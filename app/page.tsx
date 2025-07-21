@@ -41,6 +41,7 @@ import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, Respon
 import { runParallelAnalysis, generateMasterConsensus, AGENT_PROMPTS } from "@/lib/api"
 import { cleanJsonArtifacts } from "@/lib/utils"
 import type { APIResponse } from "@/lib/api"
+import Image from "next/image"
 
 interface AgentResult {
   id: string
@@ -365,8 +366,8 @@ export default function TruthCheckAI() {
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
-            <Brain className="w-8 h-8 text-black" />
-            <h1 className="text-4xl font-light text-black tracking-tight">TruthCheck AI</h1>
+            <Image src="/logo.png" alt="AI² Logo" width={40} height={40} className="rounded" />
+            <h1 className="text-4xl font-light text-black tracking-tight">AI²</h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light">
             Agentic AI verifier for detecting hallucinations, misinformation, and logical errors
@@ -952,7 +953,7 @@ export default function TruthCheckAI() {
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-400 pt-8">
-          <p>Privacy-first • Model-agnostic • Agentic verification</p>
+          <p>All data is confidental.</p>
         </div>
       </div>
     </div>
