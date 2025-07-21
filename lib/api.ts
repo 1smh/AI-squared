@@ -10,6 +10,13 @@ export interface APIResponse {
   commentary: string
   revisedText?: string
   confidence: number
+  metrics: {
+    conciseness: number  // 1-100, higher = more concise
+    correctness: number  // 1-100, higher = more correct
+    bias: number         // 1-100, higher = more biased
+    toxicity: number     // 1-100, higher = more toxic
+    objectivity: number  // 1-100, higher = more objective (vs subjective)
+  }
 }
 
 export interface MasterConsensusResponse {
@@ -18,50 +25,92 @@ export interface MasterConsensusResponse {
   summary: string
   keyIssues: string[]
   recommendations: string[]
+<<<<<<< Updated upstream
   consensusText?: string
   betterAnswer?: string
+=======
+  consensusText: string
+  aggregatedMetrics: {
+    conciseness: number
+    correctness: number
+    bias: number
+    toxicity: number
+    objectivity: number
+  }
+>>>>>>> Stashed changes
 }
 
 export const AGENT_PROMPTS: AgentPrompt[] = [
   {
     id: "developer",
     name: "Software Developer",
+<<<<<<< Updated upstream
     systemPrompt: "You are an experienced software developer. Your job is to review AI-generated content for code correctness, logic errors, best practices, and technical accuracy. Focus on syntax, implementation details, security concerns, and maintainability. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Analyze this AI response for code correctness and technical implementation. Check for:\n- Syntax errors\n- Logic flaws\n- Security vulnerabilities\n- Best practice violations\n- Missing error handling\n\nProvide a verdict (pass/warning/fail), detailed commentary, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are an experienced software developer. Your job is to review AI-generated content for code correctness, logic errors, best practices, and technical accuracy. Focus on syntax, implementation details, security concerns, and maintainability.",
+    analysisPrompt: "Analyze this AI response for code correctness and technical implementation. Check for:\n- Syntax errors\n- Logic flaws\n- Security vulnerabilities\n- Best practice violations\n- Missing error handling\n\nProvide a verdict (pass/warning/fail), detailed commentary, confidence score (0-100), and rate these metrics (1-100):\n- Conciseness: How bloated is the answer? (100 = very concise, 1 = very bloated)\n- Correctness: How well did they follow the prompt? (100 = perfectly followed, 1 = completely ignored)\n- Bias: How one-sided is the perspective? (100 = extremely biased, 1 = completely unbiased)\n- Toxicity: How condescending is the response? (100 = very condescending, 1 = not condescending)\n- Objectivity: How opinion-based vs statistical? (100 = purely objective/statistical, 1 = purely subjective/opinion)"
+>>>>>>> Stashed changes
   },
   {
     id: "child",
     name: "Child",
+<<<<<<< Updated upstream
     systemPrompt: "You are a curious 8-year-old child. Your job is to evaluate if explanations are simple enough for a child to understand. Look for complex words, confusing concepts, and unclear explanations. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Read this AI response and tell me if a child could understand it. Check for:\n- Big words that are hard to understand\n- Confusing explanations\n- Too many complex ideas at once\n- Missing simple examples\n\nIf it's too hard, suggest a simpler version. Give a verdict (pass/warning/fail), explain why, and rate your confidence (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are a curious 8-year-old child. Your job is to evaluate if explanations are simple enough for a child to understand. Look for complex words, confusing concepts, and unclear explanations.",
+    analysisPrompt: "Read this AI response and tell me if a child could understand it. Check for:\n- Big words that are hard to understand\n- Confusing explanations\n- Too many complex ideas at once\n- Missing simple examples\n\nIf it's too hard, suggest a simpler version. Give a verdict (pass/warning/fail), explain why, rate your confidence (0-100), and score these things (1-100):\n- Conciseness: Is it too long and wordy? (100 = just right length, 1 = way too long)\n- Correctness: Did they answer what was asked? (100 = answered perfectly, 1 = didn't answer at all)\n- Bias: Does it only show one side? (100 = very one-sided, 1 = shows all sides)\n- Toxicity: Is it mean or talks down to people? (100 = very mean, 1 = very nice)\n- Objectivity: Is it facts or just opinions? (100 = all facts, 1 = all opinions)"
+>>>>>>> Stashed changes
   },
   {
     id: "philosopher",
     name: "Philosopher",
+<<<<<<< Updated upstream
     systemPrompt: "You are a philosopher specializing in logic, ethics, and reasoning. Your role is to examine AI responses for logical consistency, ethical implications, reasoning flaws, and philosophical soundness. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Examine this AI response for logical and ethical soundness. Evaluate:\n- Logical consistency and reasoning\n- Ethical implications and concerns\n- Philosophical assumptions\n- Argument structure and validity\n- Potential biases or fallacies\n\nProvide verdict (pass/warning/fail), detailed analysis, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are a philosopher specializing in logic, ethics, and reasoning. Your role is to examine AI responses for logical consistency, ethical implications, reasoning flaws, and philosophical soundness.",
+    analysisPrompt: "Examine this AI response for logical and ethical soundness. Evaluate:\n- Logical consistency and reasoning\n- Ethical implications and concerns\n- Philosophical assumptions\n- Argument structure and validity\n- Potential biases or fallacies\n\nProvide verdict (pass/warning/fail), detailed analysis, confidence score (0-100), and evaluate these metrics (1-100):\n- Conciseness: How unnecessarily verbose is the response? (100 = perfectly concise, 1 = extremely verbose)\n- Correctness: How well does it address the prompt's requirements? (100 = fully addresses, 1 = completely misses the point)\n- Bias: How one-sided or prejudiced is the perspective? (100 = heavily biased, 1 = completely neutral)\n- Toxicity: How condescending or dismissive is the tone? (100 = very condescending, 1 = completely respectful)\n- Objectivity: How much is based on facts vs personal opinions? (100 = purely objective, 1 = purely subjective)"
+>>>>>>> Stashed changes
   },
   {
     id: "journalist",
     name: "Investigative Journalist",
+<<<<<<< Updated upstream
     systemPrompt: "You are an investigative journalist focused on fact-checking and source verification. Your job is to identify claims that need verification, check for misinformation, and assess the credibility of statements. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Fact-check this AI response like an investigative journalist. Look for:\n- Unverified claims and statistics\n- Missing or questionable sources\n- Potential misinformation\n- Statements that need fact-checking\n- Credibility concerns\n\nProvide verdict (pass/warning/fail), identify specific issues, and rate confidence (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are an investigative journalist focused on fact-checking and source verification. Your job is to identify claims that need verification, check for misinformation, and assess the credibility of statements.",
+    analysisPrompt: "Fact-check this AI response like an investigative journalist. Look for:\n- Unverified claims and statistics\n- Missing or questionable sources\n- Potential misinformation\n- Statements that need fact-checking\n- Credibility concerns\n\nProvide verdict (pass/warning/fail), identify specific issues, confidence score (0-100), and rate these aspects (1-100):\n- Conciseness: How much unnecessary information is included? (100 = perfectly focused, 1 = extremely bloated)\n- Correctness: How accurately does it respond to the prompt? (100 = completely accurate response, 1 = completely inaccurate)\n- Bias: How one-sided is the reporting/perspective? (100 = extremely biased, 1 = completely balanced)\n- Toxicity: How condescending or dismissive is the tone? (100 = very condescending, 1 = completely professional)\n- Objectivity: How fact-based vs opinion-based is the content? (100 = purely factual, 1 = purely opinion-based)"
+>>>>>>> Stashed changes
   },
   {
     id: "expert",
     name: "Domain Expert",
+<<<<<<< Updated upstream
     systemPrompt: "You are a domain expert with deep knowledge across multiple fields. Your role is to verify technical accuracy, identify subject matter errors, and ensure information aligns with current best practices and standards. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Review this AI response for technical accuracy and domain expertise. Assess:\n- Factual correctness in the subject area\n- Alignment with current standards/practices\n- Technical terminology usage\n- Depth and accuracy of explanations\n- Missing important context\n\nProvide verdict (pass/warning/fail), expert commentary, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are a domain expert with deep knowledge across multiple fields. Your role is to verify technical accuracy, identify subject matter errors, and ensure information aligns with current best practices and standards.",
+    analysisPrompt: "Review this AI response for technical accuracy and domain expertise. Assess:\n- Factual correctness in the subject area\n- Alignment with current standards/practices\n- Technical terminology usage\n- Depth and accuracy of explanations\n- Missing important context\n\nProvide verdict (pass/warning/fail), expert commentary, confidence score (0-100), and evaluate these dimensions (1-100):\n- Conciseness: How bloated or unnecessarily detailed is the response? (100 = appropriately concise, 1 = extremely bloated)\n- Correctness: How well does it fulfill the prompt requirements? (100 = perfectly fulfills, 1 = completely fails to fulfill)\n- Bias: How one-sided or prejudiced is the expert perspective? (100 = heavily biased, 1 = completely impartial)\n- Toxicity: How condescending or arrogant is the expert tone? (100 = very condescending, 1 = completely humble)\n- Objectivity: How much relies on data vs personal judgment? (100 = purely data-driven, 1 = purely subjective judgment)"
+>>>>>>> Stashed changes
   },
   {
     id: "compliance",
     name: "Compliance Officer",
+<<<<<<< Updated upstream
     systemPrompt: "You are a compliance officer responsible for identifying legal, safety, and policy violations. Your job is to scan content for potential risks, regulatory issues, and safety concerns. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Scan this AI response for compliance and safety issues. Check for:\n- Legal or regulatory concerns\n- Safety risks or dangerous advice\n- Privacy violations\n- Ethical policy violations\n- Inappropriate content\n\nProvide verdict (pass/warning/fail), identify specific risks, and rate confidence (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are a compliance officer responsible for identifying legal, safety, and policy violations. Your job is to scan content for potential risks, regulatory issues, and safety concerns.",
+    analysisPrompt: "Scan this AI response for compliance and safety issues. Check for:\n- Legal or regulatory concerns\n- Safety risks or dangerous advice\n- Privacy violations\n- Ethical policy violations\n- Inappropriate content\n\nProvide verdict (pass/warning/fail), identify specific risks, confidence score (0-100), and assess these criteria (1-100):\n- Conciseness: How unnecessarily lengthy or bloated is the response? (100 = appropriately brief, 1 = excessively long)\n- Correctness: How well does it address the prompt's compliance requirements? (100 = fully compliant response, 1 = completely non-compliant)\n- Bias: How one-sided or prejudicial is the compliance perspective? (100 = extremely biased, 1 = completely neutral)\n- Toxicity: How condescending or authoritarian is the tone? (100 = very condescending, 1 = completely respectful)\n- Objectivity: How policy/rule-based vs subjective is the assessment? (100 = purely rule-based, 1 = purely subjective)"
+>>>>>>> Stashed changes
   },
   {
     id: "editor",
     name: "Clarity Editor",
+<<<<<<< Updated upstream
     systemPrompt: "You are a professional editor focused on clarity, accessibility, and readability. Your job is to identify unclear writing, suggest improvements, and make content more accessible to diverse audiences. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Edit this AI response for clarity and accessibility. Evaluate:\n- Writing clarity and readability\n- Sentence structure and flow\n- Jargon and technical language\n- Accessibility for diverse audiences\n- Overall communication effectiveness\n\nProvide verdict (pass/warning/fail), suggest improvements, and rate confidence (0-100). If needed, provide a revised version.\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
   },
@@ -70,6 +119,10 @@ export const AGENT_PROMPTS: AgentPrompt[] = [
     name: "Relevance Analyst",
     systemPrompt: "You are a Relevance Analyst. Your job is to evaluate if the AI's response directly and completely addresses the user's original prompt. You must ignore factual accuracy and writing style, and focus only on whether the user's instructions were followed. IMPORTANT: Respond ONLY with valid JSON in the exact format specified.",
     analysisPrompt: "Analyze this AI response for relevance and instruction-following. Evaluate:\n- Did it answer the actual question asked?\n- Did it address all parts of the prompt?\n- Did it misunderstand the user's intent?\n- Did it include unrequested, irrelevant information?\n\nUse the following strict criteria for your verdict:\n- Fail: The response completely ignores or misunderstands the core request in the user's prompt.\n- Warning: The response answers only part of the prompt or includes significant off-topic information.\n- Pass: The response is a direct, complete, and on-topic answer to the user's query.\n\nProvide verdict (pass/warning/fail), detailed commentary, and confidence score (0-100).\n\nIMPORTANT: Respond with ONLY valid JSON in this exact format:\n{\n  \"verdict\": \"pass|warning|fail\",\n  \"commentary\": \"Your detailed analysis here\",\n  \"revisedText\": \"Optional improved version (only if verdict is warning/fail)\",\n  \"confidence\": 85\n}"
+=======
+    systemPrompt: "You are a professional editor focused on clarity, accessibility, and readability. Your job is to identify unclear writing, suggest improvements, and make content more accessible to diverse audiences.",
+    analysisPrompt: "Edit this AI response for clarity and accessibility. Evaluate:\n- Writing clarity and readability\n- Sentence structure and flow\n- Jargon and technical language\n- Accessibility for diverse audiences\n- Overall communication effectiveness\n\nProvide verdict (pass/warning/fail), suggest improvements, confidence score (0-100), and rate these elements (1-100):\n- Conciseness: How wordy or unnecessarily long is the writing? (100 = perfectly concise, 1 = extremely wordy)\n- Correctness: How well does it address what the prompt asked for? (100 = perfectly addresses prompt, 1 = completely misses the mark)\n- Bias: How one-sided or slanted is the editorial perspective? (100 = heavily biased, 1 = completely balanced)\n- Toxicity: How condescending or talking-down is the tone? (100 = very condescending, 1 = completely respectful)\n- Objectivity: How fact-based vs opinion-based is the content? (100 = purely factual, 1 = purely opinion-based)"
+>>>>>>> Stashed changes
   }
 ]
 
@@ -91,7 +144,14 @@ Please respond in this exact JSON format:
   "verdict": "pass" | "warning" | "fail",
   "commentary": "Your detailed analysis here",
   "revisedText": "Optional improved version (only if verdict is warning/fail)",
-  "confidence": 85
+  "confidence": 85,
+  "metrics": {
+    "conciseness": 75,
+    "correctness": 90,
+    "bias": 25,
+    "toxicity": 10,
+    "objectivity": 80
+  }
 }`
 
   const response = await fetch('https://api.gmi-serving.com/v1/chat/completions', {
@@ -101,13 +161,13 @@ Please respond in this exact JSON format:
       'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: "deepseek-ai/DeepSeek-R1-0528",
+      model:  "deepseek-ai/DeepSeek-R1-0528",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: fullPrompt }
       ],
       temperature: 0.3,
-      max_tokens: 50000
+      max_tokens: 75000
     })
   })
 
@@ -121,6 +181,23 @@ Please respond in this exact JSON format:
   try {
     // Try to parse JSON response
     const parsed = JSON.parse(content)
+    
+    // Ensure metrics exist with defaults
+    if (!parsed.metrics) {
+      parsed.metrics = {
+        conciseness: 50,
+        correctness: 50,
+        bias: 50,
+        toxicity: 50,
+        objectivity: 50
+      }
+    }
+    
+    // Clamp metrics to 1-100 range
+    Object.keys(parsed.metrics).forEach(key => {
+      parsed.metrics[key] = Math.max(1, Math.min(100, parsed.metrics[key] || 50))
+    })
+    
     return parsed
   } catch (e) {
     // Enhanced fallback: try to extract JSON from the content
@@ -171,9 +248,22 @@ Please respond in this exact JSON format:
     }
     
     return {
+<<<<<<< Updated upstream
       verdict,
       commentary,
       confidence
+=======
+      verdict: "warning",
+      commentary: content || "Analysis completed but response format was unexpected",
+      confidence: 50,
+      metrics: {
+        conciseness: 50,
+        correctness: 50,
+        bias: 50,
+        toxicity: 50,
+        objectivity: 50
+      }
+>>>>>>> Stashed changes
     }
   }
 }
@@ -191,7 +281,7 @@ async function callMasterConsensusAPI(
       'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: "deepseek-ai/DeepSeek-R1-0528",
+      model: "moonshotai/Kimi-K2-Instruct",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -214,6 +304,23 @@ async function callMasterConsensusAPI(
     if (!parsed.overallVerdict || !parsed.trustScore || !parsed.summary) {
       throw new Error('Invalid master consensus response structure')
     }
+    
+    // Ensure aggregated metrics exist with defaults
+    if (!parsed.aggregatedMetrics) {
+      parsed.aggregatedMetrics = {
+        conciseness: 50,
+        correctness: 50,
+        bias: 50,
+        toxicity: 50,
+        objectivity: 50
+      }
+    }
+    
+    // Clamp aggregated metrics to 1-100 range
+    Object.keys(parsed.aggregatedMetrics).forEach(key => {
+      parsed.aggregatedMetrics[key] = Math.max(1, Math.min(100, parsed.aggregatedMetrics[key] || 50))
+    })
+    
     return parsed
   } catch (e) {
     // Enhanced fallback for master consensus
@@ -302,7 +409,14 @@ export async function runParallelAnalysis(
       const fallbackResult: APIResponse = {
         verdict: "fail",
         commentary: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        confidence: 0
+        confidence: 0,
+        metrics: {
+          conciseness: 50,
+          correctness: 0,
+          bias: 50,
+          toxicity: 50,
+          objectivity: 50
+        }
       }
       onAgentComplete(agent.id, fallbackResult, processingTime)
       return { agentId: agent.id, result: fallbackResult, processingTime }
@@ -323,6 +437,15 @@ function generateFallbackConsensus(
   const recommendations: string[] = []
   let weightedConfidenceSum = 0
   let totalValidResponses = 0
+  
+  // Initialize metrics accumulator
+  const metricsSum = {
+    conciseness: 0,
+    correctness: 0,
+    bias: 0,
+    toxicity: 0,
+    objectivity: 0
+  }
 
   // Analyze agent results
   agentResults.forEach(({ agentId, result }) => {
@@ -332,6 +455,13 @@ function generateFallbackConsensus(
       verdictCounts[result.verdict]++
       weightedConfidenceSum += result.confidence
       totalValidResponses++
+      
+      // Accumulate metrics
+      if (result.metrics) {
+        Object.keys(metricsSum).forEach(key => {
+          metricsSum[key as keyof typeof metricsSum] += result.metrics[key as keyof typeof result.metrics]
+        })
+      }
     }
 
     // Extract issues from commentary
@@ -358,6 +488,15 @@ function generateFallbackConsensus(
       recommendations.push(`Address ${agentName.toLowerCase()} concerns`)
     }
   })
+
+  // Calculate average metrics
+  const aggregatedMetrics = {
+    conciseness: totalValidResponses > 0 ? Math.round(metricsSum.conciseness / totalValidResponses) : 50,
+    correctness: totalValidResponses > 0 ? Math.round(metricsSum.correctness / totalValidResponses) : 50,
+    bias: totalValidResponses > 0 ? Math.round(metricsSum.bias / totalValidResponses) : 50,
+    toxicity: totalValidResponses > 0 ? Math.round(metricsSum.toxicity / totalValidResponses) : 50,
+    objectivity: totalValidResponses > 0 ? Math.round(metricsSum.objectivity / totalValidResponses) : 50
+  }
 
   // Calculate trust score based on weighted average of confidence and verdict distribution
   const avgConfidence = totalValidResponses > 0 ? weightedConfidenceSum / totalValidResponses : 0
@@ -410,7 +549,12 @@ function generateFallbackConsensus(
     summary: `Analysis complete: ${verdictCounts.pass} agents passed, ${verdictCounts.warning} raised warnings, ${verdictCounts.fail} identified critical issues. Average confidence: ${Math.round(avgConfidence)}%.`,
     keyIssues: issues.slice(0, 5), // Limit to top 5 issues
     recommendations: recommendations.slice(0, 5), // Limit to top 5 recommendations
+<<<<<<< Updated upstream
     betterAnswer
+=======
+    consensusText: `Fallback consensus generated due to API issues. Based on ${totalValidResponses} valid agent responses, the overall assessment is ${overallVerdict} with a trust score of ${trustScore}%. ${issues.length > 0 ? `Key concerns identified by: ${issues.map(i => i.split(':')[0]).join(', ')}.` : 'No significant issues identified.'}`,
+    aggregatedMetrics
+>>>>>>> Stashed changes
   }
 }
 
@@ -420,10 +564,17 @@ export async function generateMasterConsensus(
   agentResults: Array<{ agentId: string; result: APIResponse }>,
   apiKey: string
 ): Promise<MasterConsensusResponse> {
-  // Prepare agent summary for master consensus
+  // Prepare agent summary for master consensus including metrics
   const agentSummary = agentResults.map(({ agentId, result }) => {
     const agentName = AGENT_PROMPTS.find(a => a.id === agentId)?.name || agentId
-    return `${agentName}: ${result.verdict.toUpperCase()} (${result.confidence}% confidence)\n   Analysis: ${result.commentary}\n   ${result.revisedText ? `Suggested revision: ${result.revisedText.substring(0, 200)}...` : ''}`
+    const metricsStr = result.metrics ? 
+      `Metrics - Conciseness: ${result.metrics.conciseness}, Correctness: ${result.metrics.correctness}, Bias: ${result.metrics.bias}, Toxicity: ${result.metrics.toxicity}, Objectivity: ${result.metrics.objectivity}` : 
+      'No metrics available'
+    
+    return `${agentName}: ${result.verdict.toUpperCase()} (${result.confidence}% confidence)
+   Analysis: ${result.commentary}
+   ${metricsStr}
+   ${result.revisedText ? `Suggested revision: ${result.revisedText.substring(0, 200)}...` : ''}`
   }).join('\n\n')
 
   const masterSystemPrompt = `You are the Master Consensus Agent responsible for synthesizing multiple expert analyses into a comprehensive final assessment. 
@@ -432,6 +583,7 @@ Your role is to:
 1. Weigh each expert's verdict and confidence level
 2. Identify patterns and consensus across expert opinions  
 3. Generate an overall trust score (0-100) based on agreement and confidence levels
+<<<<<<< Updated upstream
 4. Provide actionable recommendations
 5. Create a balanced final assessment
 6. Generate a better answer when the original AI response has significant issues
@@ -443,15 +595,24 @@ When creating a better answer:
 - Incorporate suggestions from individual agents' revisedText when available
 - Ensure the better answer directly responds to the original user prompt
 - Make the response more accurate, clear, and helpful than the original
+=======
+4. Aggregate the metrics from all agents into overall scores
+5. Provide actionable recommendations
+6. Create a balanced final assessment
+>>>>>>> Stashed changes
 
 Consider that:
 - Higher confidence ratings should carry more weight
 - Multiple experts agreeing increases reliability
 - Failed analyses (confidence 0) should be noted but not heavily weighted
 - Domain-specific experts may have more authority in their areas
+<<<<<<< Updated upstream
 - When experts identify issues, provide an improved version that addresses those concerns
 
 IMPORTANT: Respond ONLY with valid JSON in the exact format specified.`
+=======
+- Metrics should be averaged across all valid agent responses`
+>>>>>>> Stashed changes
 
   const masterUserPrompt = `Synthesize these expert analyses into a comprehensive final assessment:
 
@@ -470,7 +631,17 @@ IMPORTANT: Respond with ONLY valid JSON in this exact format:
   "keyIssues": ["Specific issue 1", "Specific issue 2", "etc"],
   "recommendations": ["Actionable recommendation 1", "Actionable recommendation 2", "etc"], 
   "consensusText": "Detailed 3-4 sentence explanation of your reasoning, consensus findings, and final judgment",
+<<<<<<< Updated upstream
   "betterAnswer": "A comprehensive, improved response that addresses the identified issues. This should be a complete answer to the original prompt that incorporates the expert feedback to make it more accurate, clear, and helpful. Only include if verdict is warning or fail."
+=======
+  "aggregatedMetrics": {
+    "conciseness": 75,
+    "correctness": 85,
+    "bias": 30,
+    "toxicity": 15,
+    "objectivity": 70
+  }
+>>>>>>> Stashed changes
 }`
 
   try {
@@ -487,8 +658,19 @@ IMPORTANT: Respond with ONLY valid JSON in this exact format:
       summary: result.summary || "Master consensus analysis completed",
       keyIssues: Array.isArray(result.keyIssues) ? result.keyIssues.slice(0, 10) : [],
       recommendations: Array.isArray(result.recommendations) ? result.recommendations.slice(0, 10) : [],
+<<<<<<< Updated upstream
       consensusText: result.consensusText || undefined,
       betterAnswer: result.betterAnswer || undefined
+=======
+      consensusText: result.consensusText || "Master consensus generated successfully",
+      aggregatedMetrics: result.aggregatedMetrics || {
+        conciseness: 50,
+        correctness: 50,
+        bias: 50,
+        toxicity: 50,
+        objectivity: 50
+      }
+>>>>>>> Stashed changes
     }
     
   } catch (error) {
