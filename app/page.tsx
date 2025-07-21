@@ -10,7 +10,6 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiKeyDialog } from "@/components/ui/api-key-dialog"
-<<<<<<< Updated upstream
 import { useToast } from "@/components/ui/use-toast"
 import { 
   Brain, 
@@ -20,16 +19,6 @@ import {
   FileText, 
   GraduationCap, 
   Shield, 
-=======
-import {
-  Brain,
-  Code,
-  Baby,
-  Lightbulb,
-  FileText,
-  GraduationCap,
-  Shield,
->>>>>>> Stashed changes
   Edit3,
   CheckCircle,
   AlertTriangle,
@@ -50,25 +39,8 @@ import {
 } from "@/components/ui/chart"
 import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend } from "recharts"
 import { runParallelAnalysis, generateMasterConsensus, AGENT_PROMPTS } from "@/lib/api"
-<<<<<<< Updated upstream
 import { cleanJsonArtifacts } from "@/lib/utils"
 import type { APIResponse } from "@/lib/api"
-=======
-
-export interface APIResponse {
-  verdict: "pass" | "warning" | "fail"
-  commentary: string
-  revisedText?: string
-  confidence: number
-  metrics: {
-    conciseness: number // 1-100, higher = more concise
-    correctness: number // 1-100, higher = more correct
-    bias: number // 1-100, higher = more biased
-    toxicity: number // 1-100, higher = more toxic
-    objectivity: number // 1-100, higher = more objective (vs subjective)
-  }
-}
->>>>>>> Stashed changes
 
 interface AgentResult {
   id: string
