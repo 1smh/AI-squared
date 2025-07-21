@@ -545,7 +545,7 @@ export default function TruthCheckAI() {
                         <div className="text-4xl font-light text-black">
                           {masterConsensus.trustScore}%
                         </div>
-                        <div className="text-sm text-gray-600">Trust Score</div>
+                        <div className="text-sm text-gray-600">Confidence Score</div>
                         <Badge className={`${getVerdictColor(masterConsensus.overallVerdict)} text-sm px-3 py-1`}>
                           {masterConsensus.overallVerdict.toUpperCase()}
                         </Badge>
