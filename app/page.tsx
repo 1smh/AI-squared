@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiKeyDialog } from "@/components/ui/api-key-dialog"
+import { CustomAgentDialog } from "@/components/ui/custom-agent-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { 
   Brain, 
@@ -40,7 +41,7 @@ import {
 import { PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend } from "recharts"
 import { runParallelAnalysis, generateMasterConsensus, AGENT_PROMPTS } from "@/lib/api"
 import { cleanJsonArtifacts } from "@/lib/utils"
-import type { APIResponse } from "@/lib/api"
+import type { APIResponse, AgentPrompt } from "@/lib/api"
 import Image from "next/image"
 
 interface AgentResult {
@@ -90,7 +91,54 @@ export default function TruthCheckAI() {
   const [masterConsensus, setMasterConsensus] = useState<MasterConsensus | null>(null)
   const [isGeneratingConsensus, setIsGeneratingConsensus] = useState(false)
   const { toast } = useToast()
-  const [agents, setAgents] = useState<AgentResult[]>(() => {
+  const [customAgents, setCustomAgents] = useState<AgentPrompt[]>([]);
+  
+  const allAgents = [...AGENT_PROMPTS, ...customAgents];
+  
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(() =>
+    allAgents.map(agent => agent.id)
+  );
+  const [agents, setAgents] = useState<AgentResult[]>([]);
+  const [showCustomAgentDialog, setShowCustomAgentDialog] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<AgentPrompt | null>(null);
+
+  const handleToggleAgent = (agentId: string) => {
+    setSelectedAgentIds(prev =>
+      prev.includes(agentId)
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    );
+  };
+
+  const saveCustomAgents = (agents: AgentPrompt[]) => {
+    setCustomAgents(agents);
+    localStorage.setItem('custom-agents', JSON.stringify(agents));
+  };
+
+  const addCustomAgent = (agent: Omit<AgentPrompt, 'id'>) => {
+    const newAgent: AgentPrompt = {
+      ...agent,
+      id: `custom_${Date.now()}`
+    };
+    const updatedAgents = [...customAgents, newAgent];
+    saveCustomAgents(updatedAgents);
+    setSelectedAgentIds(prev => [...prev, newAgent.id]);
+  };
+
+  const updateCustomAgent = (agentId: string, updates: Partial<AgentPrompt>) => {
+    const updatedAgents = customAgents.map(agent =>
+      agent.id === agentId ? { ...agent, ...updates } : agent
+    );
+    saveCustomAgents(updatedAgents);
+  };
+
+  const deleteCustomAgent = (agentId: string) => {
+    const updatedAgents = customAgents.filter(agent => agent.id !== agentId);
+    saveCustomAgents(updatedAgents);
+    setSelectedAgentIds(prev => prev.filter(id => id !== agentId));
+  };
+
+  useEffect(() => {
     const agentIcons = {
       developer: <Code className="w-4 h-4" />,
       child: <Baby className="w-4 h-4" />,
@@ -100,24 +148,33 @@ export default function TruthCheckAI() {
       compliance: <Shield className="w-4 h-4" />,
       editor: <Edit3 className="w-4 h-4" />,
       relevance: <PieChart className="w-4 h-4" />
-    }
+    };
 
-    return AGENT_PROMPTS.map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      icon: agentIcons[agent.id as keyof typeof agentIcons],
-      status: "pending" as const,
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    }))
-  })
+    setAgents(
+      allAgents.filter(agent => selectedAgentIds.includes(agent.id)).map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        icon: agentIcons[agent.id as keyof typeof agentIcons] || <User className="w-4 h-4" />,
+        status: "pending" as const,
+        verdict: null,
+        commentary: "",
+        confidence: 0
+      }))
+    );
+  }, [selectedAgentIds, customAgents]);
 
-  // Load API key from localStorage on mount
+  // Load API key and custom agents from localStorage on mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('gmi-api-key')
     if (savedApiKey) {
       setApiKey(savedApiKey)
+    }
+    
+    const savedAgents = localStorage.getItem('custom-agents')
+    if (savedAgents) {
+      const parsedAgents = JSON.parse(savedAgents)
+      setCustomAgents(parsedAgents)
+      setSelectedAgentIds(prev => [...prev, ...parsedAgents.map((agent: AgentPrompt) => agent.id)])
     }
   }, [])
 
@@ -199,8 +256,10 @@ export default function TruthCheckAI() {
 
           // Update progress (leave room for master consensus generation)
           const completedCount = agentResults.length
-          setAnalysisProgress((completedCount / AGENT_PROMPTS.length) * 80) // 80% for agents, 20% for consensus
-        }
+          setAnalysisProgress((completedCount / selectedAgentIds.length) * 80) // 80% for agents, 20% for consensus
+        },
+        selectedAgentIds,
+        allAgents
       )
 
       // Generate master consensus only if we have valid results
@@ -408,6 +467,91 @@ export default function TruthCheckAI() {
                   className="min-h-[120px] resize-none border-gray-200 focus:border-gray-400 focus:ring-0"
                 />
               </div>
+            </div>
+
+            {/* Agent Selection */}
+            <div className="border-t border-gray-100 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Settings className="w-4 h-4" />
+                  Select Analysis Agents
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCustomAgentDialog(true)}
+                    className="border-gray-300 hover:border-gray-400"
+                    disabled={customAgents.length >= 10}
+                  >
+                    Add Custom Agent
+                  </Button>
+                  {customAgents.length >= 10 && (
+                    <p className="text-xs text-red-600">
+                      Maximum 10 custom agents allowed. Delete an existing agent to add a new one.
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Built-in Agents */}
+              <div className="mb-4">
+                <h4 className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Built-in Agents</h4>
+                <div className="flex flex-wrap gap-4">
+                  {AGENT_PROMPTS.map(agent => (
+                    <label key={agent.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedAgentIds.includes(agent.id)}
+                        onChange={() => handleToggleAgent(agent.id)}
+                        className="rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-sm text-gray-700">{agent.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Agents */}
+              {customAgents.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Custom Agents</h4>
+                  <div className="flex flex-wrap gap-4">
+                    {customAgents.map(agent => (
+                      <div key={agent.id} className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedAgentIds.includes(agent.id)}
+                            onChange={() => handleToggleAgent(agent.id)}
+                            className="rounded border-gray-300 text-black focus:ring-black"
+                          />
+                          <span className="text-sm text-gray-700">{agent.name}</span>
+                        </label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingAgent(agent);
+                            setShowCustomAgentDialog(true);
+                          }}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteCustomAgent(agent.id)}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                        >
+                          <XCircle className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-center pt-4">
@@ -950,6 +1094,19 @@ export default function TruthCheckAI() {
           onApiKeySet={handleApiKeySet}
           currentApiKey={apiKey}
         />
+
+        {/* Custom Agent Dialog */}
+        <CustomAgentDialog
+          open={showCustomAgentDialog}
+          onOpenChange={(open: boolean) => {
+            setShowCustomAgentDialog(open);
+            if (!open) setEditingAgent(null);
+          }}
+          onSave={addCustomAgent}
+          onUpdate={updateCustomAgent}
+          editingAgent={editingAgent}
+        />
+
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-400 pt-8">

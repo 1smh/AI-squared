@@ -65,4 +65,4 @@ The application will support user-supplied API keys for:
 
 ---
 
-Built for the South Bay Agent Hackathon 2025
+Built for the South Bay Agent Hack 2025
