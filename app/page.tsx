@@ -90,7 +90,20 @@ export default function TruthCheckAI() {
   const [masterConsensus, setMasterConsensus] = useState<MasterConsensus | null>(null)
   const [isGeneratingConsensus, setIsGeneratingConsensus] = useState(false)
   const { toast } = useToast()
-  const [agents, setAgents] = useState<AgentResult[]>(() => {
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>(() =>
+    AGENT_PROMPTS.map(agent => agent.id)
+  );
+  const [agents, setAgents] = useState<AgentResult[]>([]);
+
+  const handleToggleAgent = (agentId: string) => {
+    setSelectedAgentIds(prev =>
+      prev.includes(agentId)
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    );
+  };
+
+  useEffect(() => {
     const agentIcons = {
       developer: <Code className="w-4 h-4" />,
       child: <Baby className="w-4 h-4" />,
@@ -100,18 +113,20 @@ export default function TruthCheckAI() {
       compliance: <Shield className="w-4 h-4" />,
       editor: <Edit3 className="w-4 h-4" />,
       relevance: <PieChart className="w-4 h-4" />
-    }
+    };
 
-    return AGENT_PROMPTS.map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      icon: agentIcons[agent.id as keyof typeof agentIcons],
-      status: "pending" as const,
-      verdict: null,
-      commentary: "",
-      confidence: 0
-    }))
-  })
+    setAgents(
+      AGENT_PROMPTS.filter(agent => selectedAgentIds.includes(agent.id)).map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        icon: agentIcons[agent.id as keyof typeof agentIcons],
+        status: "pending" as const,
+        verdict: null,
+        commentary: "",
+        confidence: 0
+      }))
+    );
+  }, [selectedAgentIds]);
 
   // Load API key from localStorage on mount
   useEffect(() => {
@@ -199,8 +214,9 @@ export default function TruthCheckAI() {
 
           // Update progress (leave room for master consensus generation)
           const completedCount = agentResults.length
-          setAnalysisProgress((completedCount / AGENT_PROMPTS.length) * 80) // 80% for agents, 20% for consensus
-        }
+          setAnalysisProgress((completedCount / selectedAgentIds.length) * 80) // 80% for agents, 20% for consensus
+        },
+        selectedAgentIds
       )
 
       // Generate master consensus only if we have valid results
@@ -407,6 +423,27 @@ export default function TruthCheckAI() {
                   onChange={(e) => setAiResponse(e.target.value)}
                   className="min-h-[120px] resize-none border-gray-200 focus:border-gray-400 focus:ring-0"
                 />
+              </div>
+            </div>
+
+            {/* Agent Selection */}
+            <div className="border-t border-gray-100 pt-6">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-4">
+                <Settings className="w-4 h-4" />
+                Select Analysis Agents
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {AGENT_PROMPTS.map(agent => (
+                  <label key={agent.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedAgentIds.includes(agent.id)}
+                      onChange={() => handleToggleAgent(agent.id)}
+                      className="rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <span className="text-sm text-gray-700">{agent.name}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
