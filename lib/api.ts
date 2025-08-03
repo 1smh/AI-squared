@@ -337,14 +337,18 @@ export async function runParallelAnalysis(
   aiResponse: string,
   apiKey: string,
   onAgentComplete: (agentId: string, result: APIResponse, processingTime: number) => void,
-  selectedAgentIds?: string[]
+  selectedAgentIds?: string[],
+  allAgents?: AgentPrompt[]
 ): Promise<Array<{ agentId: string; result: APIResponse }>> {
   const startTime = Date.now()
   
+  // Use provided agents or default to built-in agents
+  const agentList = allAgents || AGENT_PROMPTS
+  
   // Filter agents based on selection, default to all if none provided
   const activeAgents = selectedAgentIds ?
-    AGENT_PROMPTS.filter(agent => selectedAgentIds.includes(agent.id)) :
-    AGENT_PROMPTS
+    agentList.filter(agent => selectedAgentIds.includes(agent.id)) :
+    agentList
   
   // Create promises for selected agent API calls
   const agentPromises = activeAgents.map(async (agent) => {
